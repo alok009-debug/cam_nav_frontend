@@ -1,6 +1,9 @@
 # environment varibals
 .env
 .env.local
+.env.production
+.env.development
+
 
 # Logs
 logs
@@ -26,3 +29,8 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+
+# certifications
+cert.pem
+key.pem
