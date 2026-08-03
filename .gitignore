@@ -1,8 +1,6 @@
 # environment varibals
 .env
 .env.local
-.env.production
-.env.development
 
 
 # Logs
