@@ -4,6 +4,7 @@ import api from '../api/axios';
 import './Admin.css';
 
 const AdminDashboard = () => {
+  const [profile, setProfile] = useState([]);
   const [locations, setLocations] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
@@ -12,6 +13,7 @@ const AdminDashboard = () => {
   const [locationError, setLocationError] = useState('');
   const [formData, setFormData] = useState({
     name: '',
+    admin_id: '',
     latitude: '',
     longitude: '',
     building: '',
@@ -25,22 +27,42 @@ const AdminDashboard = () => {
 
   // Fetch locations on load
   useEffect(() => {
-    fetchLocations();
+    const adminDataString = localStorage.getItem("adminData");
+    // console.log(adminDataString);
+    
+    if (adminDataString) {
+      const adminData = JSON.parse(adminDataString);
+      // console.log(adminData);
+      
+      setProfile(adminData); // store once
+      fetchLocations(adminData.id); // pass id directly
+    }
   }, []);
 
-  const fetchLocations = async () => {
-    try {
-      const res = await api.get('/admin/locations');
-      setLocations(res.data);
-      setLoading(false);
-    } catch (err) {
-      console.error('Error fetching locations:', err);
-      if (err.response?.status === 401) {
-        navigate('/admin/login');
-      }
-      setLoading(false);
+const fetchLocations = async (admin_id) => {
+  try {
+
+    // console.log(profile);
+    
+    const res = await api.get('/admin/locations', {
+      headers: {
+        Authorization: `Bearer ${localStorage.getItem("adminToken")}`
+      },
+      params: { admin_id }
+    });
+    // console.log("Fetched locations:", res.data);
+    setLocations(res.data);
+  } catch (err) {
+    console.error('Error fetching locations:', err);
+    console.error('Backend response:', err.response?.data);
+    if (err.response?.status === 401) {
+      navigate('/admin/login');
     }
-  };
+  } finally {
+    setLoading(false);
+  }
+};
+
 
   const handleLogout = () => {
     localStorage.removeItem('adminToken');
@@ -52,7 +74,7 @@ const AdminDashboard = () => {
   const getCurrentLocation = () => {
     setGettingLocation(true);
     setLocationError('');
-    
+
     if (!navigator.geolocation) {
       setLocationError('Geolocation is not supported by your browser');
       setGettingLocation(false);
@@ -76,7 +98,7 @@ const AdminDashboard = () => {
       (error) => {
         console.error('❌ Geolocation error:', error);
         let errorMsg = 'Failed to get location';
-        switch(error.code) {
+        switch (error.code) {
           case error.PERMISSION_DENIED:
             errorMsg = 'Location permission denied. Please allow location access.';
             break;
@@ -102,8 +124,13 @@ const AdminDashboard = () => {
 
   const openAddModal = () => {
     setEditingLocation(null);
+
+    const adminDataString = localStorage.getItem("adminData");
+    const adminData = JSON.parse(adminDataString);
+    const id = adminData.id;
     setFormData({
       name: '',
+      admin_id: id,
       latitude: '',
       longitude: '',
       building: '',
@@ -148,8 +175,8 @@ const AdminDashboard = () => {
     setSuccess('');
 
     // Validate
-    if (!formData.name || !formData.latitude || !formData.longitude) {
-      setError('Name, latitude, and longitude are required');
+    if (!formData.name || !formData.admin_id || !formData.latitude || !formData.longitude) {
+      setError('Name, admin id,  latitude, and longitude are required');
       return;
     }
 
@@ -173,7 +200,7 @@ const AdminDashboard = () => {
 
       // Refresh list
       await fetchLocations();
-      
+
       // Close modal after delay
       setTimeout(() => {
         setShowModal(false);
@@ -208,6 +235,8 @@ const AdminDashboard = () => {
       {/* Header */}
       <header className="admin-header">
         <div className="admin-header-left">
+
+          <h1>Welcome</h1>
           <h1>🏛️ Admin Dashboard</h1>
           <span className="admin-badge">{locations.length} Locations</span>
         </div>
@@ -277,14 +306,14 @@ const AdminDashboard = () => {
                     </span>
                   </td>
                   <td>
-                    <button 
-                      onClick={() => openEditModal(loc)} 
+                    <button
+                      onClick={() => openEditModal(loc)}
                       className="btn-edit"
                     >
                       ✏️
                     </button>
-                    <button 
-                      onClick={() => handleDelete(loc.locId)} 
+                    <button
+                      onClick={() => handleDelete(loc.locId)}
                       className="btn-delete"
                     >
                       🗑️
@@ -332,7 +361,7 @@ const AdminDashboard = () => {
                       step="any"
                       required
                     />
-                    <button 
+                    <button
                       type="button"
                       onClick={getCurrentLocation}
                       disabled={gettingLocation}
@@ -355,7 +384,7 @@ const AdminDashboard = () => {
                       step="any"
                       required
                     />
-                    <button 
+                    <button
                       type="button"
                       onClick={getCurrentLocation}
                       disabled={gettingLocation}
