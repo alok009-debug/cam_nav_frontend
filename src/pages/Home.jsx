@@ -202,7 +202,7 @@ const Home = () => {
                             📷 Scan QR Code
                         </button>
 
-                        <div style={{ marginTop: '10px' }}>
+                        {/* <div style={{ marginTop: '10px' }}>
                             <p style={{ fontSize: '12px', color: '#888', textAlign: 'center' }}>— OR select manually —</p>
                             <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginTop: '8px' }}>
                                 {locations.map(loc => (
@@ -215,7 +215,7 @@ const Home = () => {
                                     </button>
                                 ))}
                             </div>
-                        </div>
+                        </div> */}
 
                         {error && <p className="error">{error}</p>}
                     </div>
