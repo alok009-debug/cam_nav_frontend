@@ -16,29 +16,28 @@ const Navigation = () => {
     const [isNavigating, setIsNavigating] = useState(false);
     const [currentStepIndex, setCurrentStepIndex] = useState(0);
     const [arrived, setArrived] = useState(false);
-    const [showScanner, setShowScanner] = useState(false);
     const [qrScanned, setQrScanned] = useState(false);
 
     // Hooks
     const { location: gpsLocation } = useGeolocation();
     const { heading, permission, requestPermission } = useCompass();
 
-    // Available test locations
-    // Replace the manual location buttons with new ones
+
+    // Replace this section:
     const testLocations = [
         { locId: 30, name: 'Hostel stairs', latitude: 23.38236340, longitude: 85.33152920 },
         { locId: 31, name: 'Rooftop solars', latitude: 23.38236170, longitude: 85.33154330 },
         { locId: 32, name: 'Grass lands', latitude: 23.38231500, longitude: 85.33163000 },
     ];
-
     // Fetch locations on load
     useEffect(() => {
-        // Use test locations for now
         setLocations(testLocations);
+        console.log('📍 Locations loaded:', testLocations);
     }, []);
 
     // Manual location selection
     const handleManualLocation = (loc) => {
+        console.log('📍 Current location selected:', loc);
         setCurrentLocation({
             locId: loc.locId,
             name: loc.name,
@@ -46,7 +45,6 @@ const Navigation = () => {
             longitude: loc.longitude,
         });
         setQrScanned(true);
-        setShowScanner(false);
         setError('');
     };
 
@@ -54,6 +52,7 @@ const Navigation = () => {
     const handleDestinationSelect = (e) => {
         const locId = parseInt(e.target.value);
         const selected = locations.find(l => l.locId === locId);
+        console.log('🎯 Destination selected:', selected);
         setDestination(selected);
         setError('');
     };
@@ -64,6 +63,8 @@ const Navigation = () => {
             setError('Please select both current location and destination');
             return;
         }
+
+        console.log('🚀 Finding route from', currentLocation.locId, 'to', destination.locId);
 
         setLoading(true);
         setError('');
@@ -77,11 +78,18 @@ const Navigation = () => {
                 endId: destination.locId
             });
 
-            console.log('📍 Route found:', response.data);
-            setRoute(response.data);
-            setIsNavigating(true);
+            console.log('📍 API Response:', response.data);
+
+            if (response.data.success) {
+                setRoute(response.data);
+                setIsNavigating(true);
+                console.log('✅ Route found!');
+            } else {
+                setError('Failed to find path');
+            }
         } catch (err) {
             console.error('❌ Navigation error:', err);
+            console.error('❌ Error response:', err.response?.data);
             setError(err.response?.data?.error || 'Failed to find path');
         } finally {
             setLoading(false);
@@ -89,6 +97,7 @@ const Navigation = () => {
     };
 
     const stopNavigation = () => {
+        console.log('🛑 Stopping navigation');
         setIsNavigating(false);
         setRoute(null);
         setCurrentStepIndex(0);
@@ -98,6 +107,7 @@ const Navigation = () => {
     // Get current position
     const getCurrentPosition = () => {
         if (gpsLocation) {
+            console.log('📍 GPS Location:', gpsLocation);
             return { lat: gpsLocation.lat, lng: gpsLocation.lng };
         }
         if (currentLocation) {
@@ -108,39 +118,59 @@ const Navigation = () => {
 
     // Calculate distance to next waypoint
     const getDistanceToNext = () => {
-        if (!route || !route.directions || currentStepIndex >= route.directions.length) {
+        if (!route || !route.directions || route.directions.length === 0) {
             return null;
+        }
+
+        if (currentStepIndex >= route.directions.length) {
+            return 0;
         }
 
         const currentPos = getCurrentPosition();
         if (!currentPos) return null;
 
         const currentStep = route.directions[currentStepIndex];
-        const nextNode = route.pathNodes.find(n => n.node_id === currentStep.to);
 
-        if (!nextNode) return null;
+        // Find the next node
+        const nextNode = route.pathNodes?.find(n => n.node_id === currentStep.to);
+
+        if (!nextNode) {
+            console.log('⚠️ Next node not found for step:', currentStep);
+            return null;
+        }
 
         const dist = calculateDistance(
             currentPos.lat, currentPos.lng,
             parseFloat(nextNode.latitude), parseFloat(nextNode.longitude)
         );
 
+        console.log('📏 Distance to next waypoint:', Math.round(dist), 'm');
         return Math.round(dist);
     };
 
     // Get arrow direction
     const getArrowDirection = () => {
-        if (!route || !route.directions || currentStepIndex >= route.directions.length) {
+        if (!route || !route.directions || route.directions.length === 0) {
+            return 0;
+        }
+
+        if (currentStepIndex >= route.directions.length) {
             return 0;
         }
 
         const currentPos = getCurrentPosition();
-        if (!currentPos || heading === null) return 0;
+        if (!currentPos || heading === null) {
+            console.log('⚠️ No position or heading data');
+            return 0;
+        }
 
         const currentStep = route.directions[currentStepIndex];
-        const nextNode = route.pathNodes.find(n => n.node_id === currentStep.to);
+        const nextNode = route.pathNodes?.find(n => n.node_id === currentStep.to);
 
-        if (!nextNode) return 0;
+        if (!nextNode) {
+            console.log('⚠️ Next node not found');
+            return 0;
+        }
 
         const bearing = calculateBearing(
             currentPos.lat, currentPos.lng,
@@ -150,18 +180,26 @@ const Navigation = () => {
         let diff = bearing - heading;
         if (diff > 180) diff -= 360;
         if (diff < -180) diff += 360;
+
+        console.log('🧭 Arrow rotation:', Math.round(diff), '°');
         return diff;
     };
 
     // Check if arrived at current waypoint
     useEffect(() => {
-        if (!isNavigating || !route || arrived) return;
+        if (!isNavigating || !route || arrived) {
+            console.log('⏸️ Navigation paused or already arrived');
+            return;
+        }
 
         const dist = getDistanceToNext();
-        if (dist !== null && dist < 10) {
+        console.log('📍 Checking distance:', dist);
+
+        if (dist !== null && dist < 5) {
+            console.log('✅ Reached waypoint!');
             if (currentStepIndex < route.directions.length - 1) {
                 setCurrentStepIndex(prev => prev + 1);
-                console.log('✅ Reached waypoint, moving to next step');
+                console.log('➡️ Moving to next step');
             } else {
                 setArrived(true);
                 setIsNavigating(false);
@@ -173,6 +211,16 @@ const Navigation = () => {
     const currentStep = route?.directions?.[currentStepIndex];
     const distanceToNext = getDistanceToNext();
     const arrowRotation = getArrowDirection();
+
+    console.log('🔄 Current state:', {
+        isNavigating,
+        arrived,
+        currentStepIndex,
+        currentStep,
+        distanceToNext,
+        arrowRotation,
+        routeExists: !!route
+    });
 
     return (
         <div className="nav-container">
@@ -251,7 +299,7 @@ const Navigation = () => {
                             <button onClick={stopNavigation} className="stop-btn">✕ Stop</button>
                         </div>
                         <div className="progress">
-                            Step {currentStepIndex + 1} of {route.directions.length}
+                            Step {currentStepIndex + 1} of {route.directions?.length || 0}
                         </div>
                     </div>
 
@@ -271,7 +319,8 @@ const Navigation = () => {
                         <div className="instruction-icon">
                             {currentStep?.direction?.includes('left') ? '↩️' :
                                 currentStep?.direction?.includes('right') ? '↪️' :
-                                    '⬆️'}
+                                    currentStep?.direction?.includes('stairs') ? '🪜' :
+                                        '⬆️'}
                         </div>
                         <div className="instruction-text">
                             <div className="action">{currentStep?.direction || 'Continue walking'}</div>
@@ -285,7 +334,7 @@ const Navigation = () => {
                     <div className="nav-stats">
                         <div className="stat">
                             <span className="stat-label">Total Distance</span>
-                            <span className="stat-value">{route.totalDistance}m</span>
+                            <span className="stat-value">{route.totalDistance || 0}m</span>
                         </div>
                         <div className="stat">
                             <span className="stat-label">Remaining</span>
@@ -298,7 +347,7 @@ const Navigation = () => {
                     {/* Mini Map */}
                     <div className="mini-map">
                         <div className="path-visual">
-                            {route.pathNodes.map((node, index) => (
+                            {route.pathNodes?.map((node, index) => (
                                 <div
                                     key={node.node_id}
                                     className={`path-dot ${index <= currentStepIndex ? 'visited' : ''} ${index === currentStepIndex ? 'current' : ''}`}
@@ -308,7 +357,7 @@ const Navigation = () => {
                             ))}
                         </div>
                         <div className="path-labels">
-                            {route.pathNodes.map((node, index) => (
+                            {route.pathNodes?.map((node, index) => (
                                 <span key={node.node_id} className={`label ${index === currentStepIndex ? 'active' : ''}`}>
                                     {node.node_name}
                                 </span>

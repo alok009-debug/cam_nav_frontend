@@ -4,13 +4,14 @@ import api from '../api/axios';
 import './Admin.css';
 
 const AdminDashboard = () => {
-  const [profile, setProfile] = useState([]);
+  const [profile, setProfile] = useState(null);
   const [locations, setLocations] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [editingLocation, setEditingLocation] = useState(null);
   const [gettingLocation, setGettingLocation] = useState(false);
   const [locationError, setLocationError] = useState('');
+  const [adminId, setAdminId] = useState(null); // ✅ Store admin ID
   const [formData, setFormData] = useState({
     name: '',
     admin_id: '',
@@ -28,41 +29,45 @@ const AdminDashboard = () => {
   // Fetch locations on load
   useEffect(() => {
     const adminDataString = localStorage.getItem("adminData");
-    // console.log(adminDataString);
     
     if (adminDataString) {
       const adminData = JSON.parse(adminDataString);
-      // console.log(adminData);
-      
-      setProfile(adminData); // store once
-      fetchLocations(adminData.id); // pass id directly
+      setProfile(adminData);
+      setAdminId(adminData.id); // ✅ Store admin ID
+      fetchLocations(adminData.id);
+    } else {
+      navigate('/admin/login');
     }
   }, []);
 
-const fetchLocations = async (admin_id) => {
-  try {
-
-    // console.log(profile);
-    
-    const res = await api.get('/admin/locations', {
-      headers: {
-        Authorization: `Bearer ${localStorage.getItem("adminToken")}`
-      },
-      params: { admin_id }
-    });
-    // console.log("Fetched locations:", res.data);
-    setLocations(res.data);
-  } catch (err) {
-    console.error('Error fetching locations:', err);
-    console.error('Backend response:', err.response?.data);
-    if (err.response?.status === 401) {
-      navigate('/admin/login');
+  const fetchLocations = async (admin_id) => {
+    try {
+      setLoading(true);
+      const res = await api.get('/admin/locations', {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("adminToken")}`
+        },
+        params: { admin_id }
+      });
+      setLocations(res.data);
+      // console.log(res.data);
+      
+    } catch (err) {
+      console.error('Error fetching locations:', err);
+      if (err.response?.status === 401) {
+        navigate('/admin/login');
+      }
+    } finally {
+      setLoading(false);
     }
-  } finally {
-    setLoading(false);
-  }
-};
+  };
 
+  // ✅ Refresh function using stored adminId
+  const refreshLocations = async () => {
+    if (adminId) {
+      await fetchLocations(adminId);
+    }
+  };
 
   const handleLogout = () => {
     localStorage.removeItem('adminToken');
@@ -83,7 +88,6 @@ const fetchLocations = async (admin_id) => {
 
     navigator.geolocation.getCurrentPosition(
       (position) => {
-        console.log('📍 Location fetched:', position.coords);
         setFormData({
           ...formData,
           latitude: position.coords.latitude.toFixed(8),
@@ -91,12 +95,10 @@ const fetchLocations = async (admin_id) => {
         });
         setGettingLocation(false);
         setLocationError('');
-        // Show success feedback
         setSuccess('📍 Location captured successfully!');
         setTimeout(() => setSuccess(''), 3000);
       },
       (error) => {
-        console.error('❌ Geolocation error:', error);
         let errorMsg = 'Failed to get location';
         switch (error.code) {
           case error.PERMISSION_DENIED:
@@ -124,7 +126,6 @@ const fetchLocations = async (admin_id) => {
 
   const openAddModal = () => {
     setEditingLocation(null);
-
     const adminDataString = localStorage.getItem("adminData");
     const adminData = JSON.parse(adminDataString);
     const id = adminData.id;
@@ -145,9 +146,12 @@ const fetchLocations = async (admin_id) => {
   };
 
   const openEditModal = (location) => {
+    console.log(location);
+    
     setEditingLocation(location);
     setFormData({
       name: location.name,
+      admin_id: location.admin_id || adminId,
       latitude: location.latitude,
       longitude: location.longitude,
       building: location.building || '',
@@ -159,6 +163,14 @@ const fetchLocations = async (admin_id) => {
     setError('');
     setSuccess('');
     setLocationError('');
+
+      console.log(location.latitude),
+      
+      console.log(location.longitude),
+    console.log(formData);
+    
+
+    
   };
 
   const handleInputChange = (e) => {
@@ -174,9 +186,8 @@ const fetchLocations = async (admin_id) => {
     setError('');
     setSuccess('');
 
-    // Validate
     if (!formData.name || !formData.admin_id || !formData.latitude || !formData.longitude) {
-      setError('Name, admin id,  latitude, and longitude are required');
+      setError('Name, admin id, latitude, and longitude are required');
       return;
     }
 
@@ -189,26 +200,31 @@ const fetchLocations = async (admin_id) => {
       };
 
       if (editingLocation) {
-        // Update
-        await api.put(`/admin/locations/${editingLocation.locId}`, data);
+        await api.put(`/admin/locations`, {
+          params: {}
+        });
         setSuccess('✅ Location updated successfully!');
       } else {
-        // Create
         await api.post('/admin/locations', data);
         setSuccess('✅ Location added successfully!');
       }
 
-      // Refresh list
-      await fetchLocations();
+      // ✅ Refresh locations after operation
+      await refreshLocations();
 
-      // Close modal after delay
       setTimeout(() => {
         setShowModal(false);
         setSuccess('');
       }, 1500);
+
     } catch (err) {
       console.error('Error saving location:', err);
-      setError(err.response?.data?.error || 'Failed to save location');
+      if (err.response?.status === 409) {
+        const existingName = err.response?.data?.existingName || 'another location';
+        setError(`⚠️ A location already exists at these coordinates: "${existingName}"`);
+      } else {
+        setError(err.response?.data?.error || 'Failed to save location');
+      }
     }
   };
 
@@ -217,8 +233,11 @@ const fetchLocations = async (admin_id) => {
 
     try {
       await api.delete(`/admin/locations/${locId}`);
-      await fetchLocations();
       setSuccess('✅ Location deleted successfully!');
+      
+      // ✅ Refresh locations after delete
+      await refreshLocations();
+      
       setTimeout(() => setSuccess(''), 2000);
     } catch (err) {
       console.error('Error deleting location:', err);
@@ -232,13 +251,13 @@ const fetchLocations = async (admin_id) => {
 
   return (
     <div className="admin-dashboard">
-      {/* Header */}
       <header className="admin-header">
         <div className="admin-header-left">
-
-          <h1>Welcome</h1>
           <h1>🏛️ Admin Dashboard</h1>
           <span className="admin-badge">{locations.length} Locations</span>
+          <span style={{ fontSize: '14px', color: '#666', marginLeft: '10px' }}>
+            Welcome, {profile?.username || 'Admin'}!
+          </span>
         </div>
         <div className="admin-header-right">
           <button onClick={openAddModal} className="btn-primary">
@@ -250,11 +269,9 @@ const fetchLocations = async (admin_id) => {
         </div>
       </header>
 
-      {/* Success/Error Messages */}
       {success && <div className="alert-success">{success}</div>}
       {error && <div className="alert-error">{error}</div>}
 
-      {/* Stats Cards */}
       <div className="stats-container">
         <div className="stat-card">
           <h3>Total Locations</h3>
@@ -270,7 +287,6 @@ const fetchLocations = async (admin_id) => {
         </div>
       </div>
 
-      {/* Location Table */}
       <div className="table-container">
         <h2>All Locations</h2>
         <table className="location-table">
@@ -306,18 +322,8 @@ const fetchLocations = async (admin_id) => {
                     </span>
                   </td>
                   <td>
-                    <button
-                      onClick={() => openEditModal(loc)}
-                      className="btn-edit"
-                    >
-                      ✏️
-                    </button>
-                    <button
-                      onClick={() => handleDelete(loc.locId)}
-                      className="btn-delete"
-                    >
-                      🗑️
-                    </button>
+                    <button onClick={() => openEditModal(loc)} className="btn-edit">✏️</button>
+                    <button onClick={() => handleDelete(loc.locId)} className="btn-delete">🗑️</button>
                   </td>
                 </tr>
               ))
@@ -326,7 +332,7 @@ const fetchLocations = async (admin_id) => {
         </table>
       </div>
 
-      {/* Add/Edit Modal */}
+      {/* Modal */}
       {showModal && (
         <div className="modal-overlay" onClick={() => setShowModal(false)}>
           <div className="modal-content" onClick={(e) => e.stopPropagation()}>
@@ -397,18 +403,14 @@ const fetchLocations = async (admin_id) => {
                 </div>
               </div>
 
-              {/* Location error message */}
               {locationError && (
                 <div className="form-error" style={{ marginBottom: '10px' }}>
                   ⚠️ {locationError}
                 </div>
               )}
 
-              {/* Location status */}
               {gettingLocation && (
-                <div className="location-status">
-                  ⏳ Fetching your location...
-                </div>
+                <div className="location-status">⏳ Fetching your location...</div>
               )}
 
               <div className="form-row">
