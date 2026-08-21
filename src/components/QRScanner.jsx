@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Html5Qrcode } from 'html5-qrcode';
 
-const QRScanner = ({ onScanSuccess, onScanError, stopScanner, cameraReady }) => {
+const QRScanner = ({ onScanSuccess, onScanError, stopScanner }) => {
   const [isScanning, setIsScanning] = useState(false);
   const [error, setError] = useState(null);
   const scannerRef = useRef(null);
@@ -27,12 +27,6 @@ const QRScanner = ({ onScanSuccess, onScanError, stopScanner, cameraReady }) => 
       return;
     }
 
-    // Don't start if camera is not ready
-    if (!cameraReady) {
-      console.log('⏳ Waiting for camera permission...');
-      return;
-    }
-
     // Don't re-initialize if already scanning
     if (initialized.current) {
       console.log('Scanner already initialized, skipping...');
@@ -43,6 +37,7 @@ const QRScanner = ({ onScanSuccess, onScanError, stopScanner, cameraReady }) => 
       try {
         console.log('📷 Initializing scanner...');
         
+        // Check if element exists
         const element = document.getElementById('qr-reader');
         if (!element) {
           console.error('QR reader element not found');
@@ -57,12 +52,14 @@ const QRScanner = ({ onScanSuccess, onScanError, stopScanner, cameraReady }) => 
           { facingMode: 'environment' },
           { fps: 10, qrbox: { width: 250, height: 250 } },
           (decodedText) => {
+            // Prevent multiple scans
             if (hasScanned.current || !isMounted.current) return;
             
             console.log('✅ QR scanned:', decodedText);
             hasScanned.current = true;
             setIsScanning(false);
             
+            // Stop scanner after successful scan
             if (scannerRef.current) {
               try {
                 scannerRef.current.stop();
@@ -75,7 +72,7 @@ const QRScanner = ({ onScanSuccess, onScanError, stopScanner, cameraReady }) => 
             onScanSuccess(decodedText);
           },
           (errorMessage) => {
-            // Ignore common errors
+            // Silently ignore common errors
             if (!errorMessage) return;
             if (errorMessage.includes('No QR code found')) return;
             if (errorMessage.includes('not running')) return;
@@ -106,6 +103,7 @@ const QRScanner = ({ onScanSuccess, onScanError, stopScanner, cameraReady }) => 
       }
     };
 
+    // Start with delay to ensure DOM is ready
     const timer = setTimeout(startScanner, 500);
 
     return () => {
@@ -120,7 +118,7 @@ const QRScanner = ({ onScanSuccess, onScanError, stopScanner, cameraReady }) => 
         initialized.current = false;
       }
     };
-  }, [onScanSuccess, onScanError, stopScanner, cameraReady]);
+  }, [onScanSuccess, onScanError, stopScanner]);
 
   return (
     <div>
@@ -136,18 +134,23 @@ const QRScanner = ({ onScanSuccess, onScanError, stopScanner, cameraReady }) => 
           overflow: 'hidden',
         }}
       />
-      {!cameraReady && (
-        <p style={{ textAlign: 'center', marginTop: '10px', color: '#f39c12' }}>
-          ⏳ Waiting for camera permission...
-        </p>
-      )}
-      {isScanning && !stopScanner && !error && cameraReady && (
-        <p style={{ textAlign: 'center', marginTop: '10px', color: '#2ecc71', fontSize: '14px' }}>
+      {isScanning && !stopScanner && !error && (
+        <p style={{ 
+          textAlign: 'center', 
+          marginTop: '10px', 
+          color: '#2ecc71',
+          fontSize: '14px',
+        }}>
           📷 Camera active - Point at QR code
         </p>
       )}
       {stopScanner && (
-        <p style={{ textAlign: 'center', marginTop: '10px', color: '#3498db', fontSize: '14px' }}>
+        <p style={{ 
+          textAlign: 'center', 
+          marginTop: '10px', 
+          color: '#3498db',
+          fontSize: '14px',
+        }}>
           ✅ QR Code scanned successfully!
         </p>
       )}

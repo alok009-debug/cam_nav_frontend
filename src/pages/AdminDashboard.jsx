@@ -12,6 +12,8 @@ const AdminDashboard = () => {
   const [gettingLocation, setGettingLocation] = useState(false);
   const [locationError, setLocationError] = useState('');
   const [adminId, setAdminId] = useState(null); // ✅ Store admin ID
+const [currentLocId, setCurrentLocId] = useState(null);   // ✅ Add this
+const [currentLocName, setCurrentLocName] = useState(''); 
   const [formData, setFormData] = useState({
     name: '',
     admin_id: '',
@@ -29,7 +31,7 @@ const AdminDashboard = () => {
   // Fetch locations on load
   useEffect(() => {
     const adminDataString = localStorage.getItem("adminData");
-    
+
     if (adminDataString) {
       const adminData = JSON.parse(adminDataString);
       setProfile(adminData);
@@ -51,7 +53,7 @@ const AdminDashboard = () => {
       });
       setLocations(res.data);
       // console.log(res.data);
-      
+
     } catch (err) {
       console.error('Error fetching locations:', err);
       if (err.response?.status === 401) {
@@ -147,7 +149,7 @@ const AdminDashboard = () => {
 
   const openEditModal = (location) => {
     console.log(location);
-    
+
     setEditingLocation(location);
     setFormData({
       name: location.name,
@@ -164,13 +166,58 @@ const AdminDashboard = () => {
     setSuccess('');
     setLocationError('');
 
-      console.log(location.latitude),
-      
-      console.log(location.longitude),
-    console.log(formData);
-    
+    console.log(location.latitude),
 
-    
+      console.log(location.longitude),
+      console.log(formData);
+
+
+
+  };
+  // Add QR generation function
+  const [qrImage, setQrImage] = useState(null);
+  const [qrLoading, setQrLoading] = useState(false);
+
+  const generateQRCode = async (locId) => {
+    setQrLoading(true);
+    try {
+      const response = await api.get(`/admin/qr/generate/${locId}`, {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("adminToken")}`
+        },
+        responseType: 'blob'
+      });
+
+      // Create image URL from blob
+      const imageUrl = URL.createObjectURL(response.data);
+      setQrImage(imageUrl);
+    } catch (err) {
+      console.error('Error generating QR:', err);
+      setError('Failed to generate QR code');
+    } finally {
+      setQrLoading(false);
+    }
+  };
+
+  // Download QR code
+  const downloadQR = () => {
+    if (!qrImage) return;
+
+    // Create a temporary link element
+    const link = document.createElement('a');
+    link.href = qrImage;
+    link.download = `QR_${currentLocName.replace(/\s+/g, '_')}_${currentLocId}.png`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+
+  // Close QR modal
+  const closeQRModal = () => {
+    setQrImage(null);
+    setCurrentLocId(null);
+    setCurrentLocName('');
   };
 
   const handleInputChange = (e) => {
@@ -200,16 +247,15 @@ const AdminDashboard = () => {
       };
 
       if (editingLocation) {
-        await api.put(`/admin/locations`, {
-          params: {}
-        });
+        // ✅ FIX: Use the correct URL with ID
+        await api.put(`/admin/locations/${editingLocation.locId}`, data);
+
         setSuccess('✅ Location updated successfully!');
       } else {
         await api.post('/admin/locations', data);
         setSuccess('✅ Location added successfully!');
       }
 
-      // ✅ Refresh locations after operation
       await refreshLocations();
 
       setTimeout(() => {
@@ -234,10 +280,10 @@ const AdminDashboard = () => {
     try {
       await api.delete(`/admin/locations/${locId}`);
       setSuccess('✅ Location deleted successfully!');
-      
+
       // ✅ Refresh locations after delete
       await refreshLocations();
-      
+
       setTimeout(() => setSuccess(''), 2000);
     } catch (err) {
       console.error('Error deleting location:', err);
@@ -324,6 +370,14 @@ const AdminDashboard = () => {
                   <td>
                     <button onClick={() => openEditModal(loc)} className="btn-edit">✏️</button>
                     <button onClick={() => handleDelete(loc.locId)} className="btn-delete">🗑️</button>
+                    <button
+                      onClick={() => generateQRCode(loc.locId, loc.name)}
+                      className="btn-qr"
+                      disabled={qrLoading}
+                      title="Generate QR Code"
+                    >
+                      {qrLoading ? '⏳' : '📱'}
+                    </button>
                   </td>
                 </tr>
               ))
@@ -470,6 +524,29 @@ const AdminDashboard = () => {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+      {/* QR Code Modal */}
+      {qrImage && (
+        <div className="qr-modal" onClick={closeQRModal}>
+          <div className="qr-modal-content" onClick={(e) => e.stopPropagation()}>
+            <h3>📱 QR Code</h3>
+            <p style={{ color: '#666', fontSize: '14px' }}>
+              {currentLocName} (ID: {currentLocId})
+            </p>
+            <img src={qrImage} alt="QR Code" />
+            <div className="qr-actions">
+              <button onClick={downloadQR} className="btn-download">
+                ⬇️ Download QR Code
+              </button>
+              <button onClick={closeQRModal} className="btn-close">
+                ✕ Close
+              </button>
+            </div>
+            <p style={{ fontSize: '12px', color: '#888', marginTop: '10px' }}>
+              Print and place this QR code at the location for easy navigation
+            </p>
           </div>
         </div>
       )}

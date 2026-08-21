@@ -578,3 +578,127 @@
     padding: 8px 10px;
   }
 }
+/* QR Button */
+.btn-qr {
+  padding: 6px 10px;
+  background: #9b59b6;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 16px;
+  margin: 0 3px;
+  transition: background 0.3s;
+}
+
+.btn-qr:hover:not(:disabled) {
+  background: #8e44ad;
+}
+
+.btn-qr:disabled {
+  background: #bdc3c7;
+  cursor: not-allowed;
+}
+/* QR Modal */
+.qr-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 20px;
+}
+
+.qr-modal-content {
+  background: white;
+  padding: 30px;
+  border-radius: 16px;
+  text-align: center;
+  max-width: 400px;
+  width: 100%;
+  box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+}
+
+.qr-modal-content h3 {
+  margin: 0 0 5px 0;
+  color: #2c3e50;
+}
+
+.qr-modal-content p {
+  color: #666;
+  font-size: 14px;
+  margin-bottom: 15px;
+}
+
+.qr-modal-content img {
+  width: 100%;
+  max-width: 250px;
+  height: auto;
+  margin: 10px 0 15px 0;
+  border: 1px solid #eee;
+  border-radius: 8px;
+  padding: 10px;
+}
+
+.qr-actions {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.btn-download {
+  padding: 12px 24px;
+  background: #2ecc71;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 16px;
+  font-weight: 600;
+  transition: background 0.3s;
+  flex: 1;
+  min-width: 120px;
+}
+
+.btn-download:hover {
+  background: #27ae60;
+}
+
+.btn-close {
+  padding: 12px 24px;
+  background: #e74c3c;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 16px;
+  font-weight: 600;
+  transition: background 0.3s;
+  flex: 1;
+  min-width: 120px;
+}
+
+.btn-close:hover {
+  background: #c0392b;
+}
+
+/* Mobile Responsive */
+@media (max-width: 480px) {
+  .qr-modal-content {
+    padding: 20px;
+  }
+  
+  .qr-actions {
+    flex-direction: column;
+  }
+  
+  .btn-download, .btn-close {
+    width: 100%;
+  }
+}
