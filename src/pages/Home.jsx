@@ -19,7 +19,9 @@ const Home = () => {
   const [qrScanned, setQrScanned] = useState(false);
   const [fetchingLocations, setFetchingLocations] = useState(true);
 
-  const { location: gpsLocation } = useGeolocation();
+  const [currentStepIndex, setCurrentStepIndex] = useState(0);
+  const [arrived, setArrived] = useState(false);
+  const { location: gpsLocation } = useGeolocation()
   const { heading, permission, requestPermission } = useCompass();
 
   // Fetch all locations from database
@@ -133,13 +135,10 @@ const Home = () => {
       try {
         setFetchingLocations(true);
 
-        // ✅ Get admin_id from localStorage if available
-        const adminId = localStorage.getItem('campusAdminId');
-
-        // ✅ Use the correct endpoint
-        const url = adminId
-          ? `/navigation/locations?admin_id=${adminId}`
-          : '/navigation/all-locations';
+        // ✅ Get admin_id from localStorage if available or use default adminId 10
+        const adminId = localStorage.getItem('campusAdminId') || 10;
+        //console.log(adminId, ": admin id");
+        const url = `/navigation/locations?admin_id=${adminId}`
 
         console.log('📡 Fetching locations from:', url);
 
@@ -165,15 +164,33 @@ const Home = () => {
     }
 
     setLoading(true);
+    setError('');
+    setRoute(null);
+    setCurrentStepIndex(0); // ✅ Reset step index
+    setArrived(false);
+
     try {
       const response = await api.post('/navigation/shortest-path', {
         startId: currentLocation.locId,
         endId: destination.locId
       });
-      setRoute(response.data);
-      setIsNavigating(true);
+
+      console.log('📍 API Response:', response.data);
+
+      if (response.data.success) {
+        setRoute(response.data);
+        setIsNavigating(true);
+        console.log('✅ Route found!');
+      } else {
+        setError(response.data.message || 'No path found between these locations');
+      }
     } catch (err) {
-      setError(err.response?.data?.error || 'Failed to find path');
+      console.error('❌ Navigation error:', err);
+      if (err.response?.status === 404) {
+        setError(err.response?.data?.message || 'No path found between these locations');
+      } else {
+        setError(err.response?.data?.error || 'Failed to find path');
+      }
     } finally {
       setLoading(false);
     }
