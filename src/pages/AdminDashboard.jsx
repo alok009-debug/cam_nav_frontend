@@ -12,8 +12,8 @@ const AdminDashboard = () => {
   const [gettingLocation, setGettingLocation] = useState(false);
   const [locationError, setLocationError] = useState('');
   const [adminId, setAdminId] = useState(null); // ✅ Store admin ID
-const [currentLocId, setCurrentLocId] = useState(null);   // ✅ Add this
-const [currentLocName, setCurrentLocName] = useState(''); 
+  const [currentLocId, setCurrentLocId] = useState(null);   // ✅ Add this
+  const [currentLocName, setCurrentLocName] = useState('');
   const [formData, setFormData] = useState({
     name: '',
     admin_id: '',
@@ -41,6 +41,78 @@ const [currentLocName, setCurrentLocName] = useState('');
       navigate('/admin/login');
     }
   }, []);
+
+  // Add this function
+  const [generating, setGenerating] = useState(false);
+
+  const generateGraph = async () => {
+    if (!window.confirm('This will generate nodes and edges for all locations. Continue?')) return;
+
+    setGenerating(true);
+    setError('');
+    setSuccess('');
+
+    try {
+      const response = await api.post('/admin/generate-graph', {}, {
+        headers: { Authorization: `Bearer ${localStorage.getItem("adminToken")}` }
+      });
+      setSuccess(`✅ ${response.data.message}`);
+      // Refresh locations after generation
+      await fetchLocations(adminId);
+    } catch (err) {
+      console.error('Error generating graph:', err);
+      setError(err.response?.data?.error || 'Failed to generate graph');
+    } finally {
+      setGenerating(false);
+    }
+  };
+
+  // ============ CREATE HUB AND CONNECT ============
+  const createHubAndConnect = async () => {
+    if (!window.confirm('This will create a central hub and connect all isolated nodes. Continue?')) return;
+
+    setGenerating(true);
+    setError('');
+    setSuccess('');
+
+    try {
+      const response = await api.post('/admin/create-hub', {}, {
+        headers: { Authorization: `Bearer ${localStorage.getItem("adminToken")}` }
+      });
+      setSuccess(`✅ ${response.data.message}`);
+      await fetchLocations(adminId);
+    } catch (err) {
+      console.error('Error creating hub:', err);
+      setError(err.response?.data?.error || 'Failed to create hub');
+    } finally {
+      setGenerating(false);
+    }
+  };
+
+
+  // Add this function
+  const smartConnect = async () => {
+    if (!window.confirm('This will automatically connect all nearby locations (within 1km). Continue?')) return;
+
+    setGenerating(true);
+    setError('');
+    setSuccess('');
+
+    try {
+      const response = await api.post('/admin/smart-connect', {}, {
+        headers: { Authorization: `Bearer ${localStorage.getItem("adminToken")}` }
+      });
+      setSuccess(`✅ ${response.data.message}`);
+      await fetchLocations(adminId);
+    } catch (err) {
+      console.error('Error in smart connect:', err);
+      setError(err.response?.data?.error || 'Failed to connect locations');
+    } finally {
+      setGenerating(false);
+    }
+  };
+
+
 
   const fetchLocations = async (admin_id) => {
     try {
@@ -160,6 +232,7 @@ const [currentLocName, setCurrentLocName] = useState('');
       floor: location.floor || '',
       is_indoor: location.is_indoor || false,
       description: location.description || '',
+      create_node: true,  // ✅ ADD THIS - default to true
     });
     setShowModal(true);
     setError('');
@@ -244,6 +317,7 @@ const [currentLocName, setCurrentLocName] = useState('');
         latitude: parseFloat(formData.latitude),
         longitude: parseFloat(formData.longitude),
         floor: formData.floor ? parseInt(formData.floor) : null,
+        create_node: formData.create_node || false,  // ✅ Send this flag
       };
 
       if (editingLocation) {
@@ -309,10 +383,36 @@ const [currentLocName, setCurrentLocName] = useState('');
           <button onClick={openAddModal} className="btn-primary">
             ➕ Add Location
           </button>
+          <button
+            onClick={generateGraph}
+            className="btn-graph"
+            disabled={generating}
+          >
+            {generating ? '⏳ Generating...' : '🗺️ Generate Graph'}
+          </button>
+          <button
+            onClick={createHubAndConnect}
+            className="btn-hub"
+            disabled={generating}
+          >
+            🏛️ Create Hub & Connect
+          </button>
+          {/* to be removed the central huba nad connect */}
+
+          <button
+            onClick={smartConnect}
+            className="btn-smart"
+            disabled={generating}
+          >
+            🔗 Smart Connect
+          </button>
+
           <button onClick={handleLogout} className="btn-logout">
             Logout
           </button>
+
         </div>
+
       </header>
 
       {success && <div className="alert-success">{success}</div>}
@@ -511,6 +611,22 @@ const [currentLocName, setCurrentLocName] = useState('');
                   />
                   Indoor Location
                 </label>
+              </div>
+
+              {/* // Add this in the form (inside the modal) */}
+              <div className="form-group checkbox">
+                <label>
+                  <input
+                    type="checkbox"
+                    name="create_node"
+                    checked={formData.create_node}
+                    onChange={(e) => setFormData({ ...formData, create_node: e.target.checked })}
+                  />
+                  🗺️ Also create as a navigation node (intersection)
+                </label>
+                <small style={{ color: '#888', display: 'block', marginTop: '5px' }}>
+                  Enable this if this location should be used as a waypoint or intersection for navigation
+                </small>
               </div>
 
               {error && <div className="form-error">{error}</div>}

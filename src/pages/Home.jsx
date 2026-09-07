@@ -136,9 +136,11 @@ const Home = () => {
         setFetchingLocations(true);
 
         // ✅ Get admin_id from localStorage if available or use default adminId 10
-        const adminId = localStorage.getItem('campusAdminId') || 10;
+        const adminId = localStorage.getItem('campusAdminId');
         //console.log(adminId, ": admin id");
-        const url = `/navigation/locations?admin_id=${adminId}`
+        const url = adminId?
+        `/navigation/locations?admin_id=${adminId}`
+        :'/navigation/public-locations';
 
         console.log('📡 Fetching locations from:', url);
 

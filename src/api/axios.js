@@ -8,7 +8,7 @@ const api = axios.create({
   },
 });
 
-// Request interceptor for JWT token
+// ============ REQUEST INTERCEPTOR (Single) ============
 api.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem('adminToken');
@@ -20,10 +20,11 @@ api.interceptors.request.use(
   (error) => Promise.reject(error)
 );
 
-// Response interceptor for error handling
+// ============ RESPONSE INTERCEPTOR ============
 api.interceptors.response.use(
   (response) => response,
   (error) => {
+    // Handle 401 Unauthorized - Token expired or invalid
     if (error.response?.status === 401) {
       localStorage.removeItem('adminToken');
       localStorage.removeItem('adminData');
