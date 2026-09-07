@@ -4,7 +4,7 @@ import AdminLogin from './pages/AdminLogin';
 import AdminSignup from './pages/AdminSignUp';
 import AdminDashboard from './pages/AdminDashboard';
 import NavigationPage from './pages/NavigationPage';
-import SimpleTest from './pages/simpleTest';
+import SimpleTest from './pages/SimpleTest';
 import './App.css';
 
 function App() {
