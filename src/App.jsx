@@ -9,6 +9,7 @@ import './App.css';
 
 function App() {
   return (
+    
     <BrowserRouter>
       <nav className="nav-bar">
         <Link to="/">🏠 Home</Link>
