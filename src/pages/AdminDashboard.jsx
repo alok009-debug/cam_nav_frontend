@@ -383,30 +383,6 @@ const AdminDashboard = () => {
           <button onClick={openAddModal} className="btn-primary">
             ➕ Add Location
           </button>
-          <button
-            onClick={generateGraph}
-            className="btn-graph"
-            disabled={generating}
-          >
-            {generating ? '⏳ Generating...' : '🗺️ Generate Graph'}
-          </button>
-          <button
-            onClick={createHubAndConnect}
-            className="btn-hub"
-            disabled={generating}
-          >
-            🏛️ Create Hub & Connect
-          </button>
-          {/* to be removed the central huba nad connect */}
-
-          <button
-            onClick={smartConnect}
-            className="btn-smart"
-            disabled={generating}
-          >
-            🔗 Smart Connect
-          </button>
-
           <button onClick={handleLogout} className="btn-logout">
             Logout
           </button>
