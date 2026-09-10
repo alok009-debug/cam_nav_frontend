@@ -24,24 +24,6 @@ const Home = () => {
   const { location: gpsLocation } = useGeolocation()
   const { heading, permission, requestPermission } = useCompass();
 
-  // Fetch all locations from database
-  useEffect(() => {
-    const fetchAllLocations = async () => {
-      try {
-        setFetchingLocations(true);
-        const response = await api.get('/navigation/locations');
-        console.log('📍 All locations:', response.data);
-        setLocations(response.data);
-      } catch (err) {
-        console.error('Error fetching locations:', err);
-        setError('Failed to load locations. Please refresh.');
-      } finally {
-        setFetchingLocations(false);
-      }
-    };
-    fetchAllLocations();
-  }, []);
-
   // Handle QR scan success
   const handleQRScan = async (qrHash) => {
     try {
@@ -89,7 +71,7 @@ const Home = () => {
         setError('');
       }
     } catch (err) {
-      console.error('❌ QR validation error:', err);
+      console.error(' QR validation error:', err);
       setError('Invalid QR code. Please try again.');
       setQrScanned(false);
       setStopScanner(false);
@@ -135,17 +117,16 @@ const Home = () => {
       try {
         setFetchingLocations(true);
 
-        // ✅ Get admin_id from localStorage if available or use default adminId 10
         const adminId = localStorage.getItem('campusAdminId');
         //console.log(adminId, ": admin id");
         const url = adminId?
         `/navigation/locations?admin_id=${adminId}`
         :'/navigation/public-locations';
 
-        console.log('📡 Fetching locations from:', url);
+        console.log('Fetching locations from:', url);
 
         const response = await api.get(url);
-        console.log('📍 Locations fetched:', response.data.length);
+        console.log(' Locations fetched:', response.data.length);
         setLocations(response.data);
 
       } catch (err) {
@@ -168,7 +149,7 @@ const Home = () => {
     setLoading(true);
     setError('');
     setRoute(null);
-    setCurrentStepIndex(0); // ✅ Reset step index
+    setCurrentStepIndex(0); 
     setArrived(false);
 
     try {
@@ -177,17 +158,17 @@ const Home = () => {
         endId: destination.locId
       });
 
-      console.log('📍 API Response:', response.data);
+      console.log(' API Response:', response.data);
 
       if (response.data.success) {
         setRoute(response.data);
         setIsNavigating(true);
-        console.log('✅ Route found!');
+        console.log('Route found!');
       } else {
         setError(response.data.message || 'No path found between these locations');
       }
     } catch (err) {
-      console.error('❌ Navigation error:', err);
+      console.error(' Navigation error:', err);
       if (err.response?.status === 404) {
         setError(err.response?.data?.message || 'No path found between these locations');
       } else {
@@ -246,7 +227,7 @@ const Home = () => {
   return (
     <div className="home-container">
       <header className="home-header">
-        <h1>🏛️ Campus Navigation</h1>
+        <h1>Campus Navigation</h1>
         <p>Find your way around campus</p>
       </header>
 
@@ -254,7 +235,7 @@ const Home = () => {
         <div className="home-section">
           {/* Current Location Dropdown */}
           <div className="location-section">
-            <h3>📍 Your Location</h3>
+            <h3> Your Location</h3>
             {!qrScanned ? (
               <div>
                 {/* QR Scanner Button */}
@@ -265,7 +246,7 @@ const Home = () => {
                   }}
                   className="scan-btn"
                 >
-                  📷 Scan QR Code
+                   Scan QR Code
                 </button>
 
                 {showScanner && (
@@ -282,7 +263,7 @@ const Home = () => {
                       }}
                       className="close-scanner-btn"
                     >
-                      ❌ Close
+                       Close
                     </button>
                   </div>
                 )}
@@ -306,7 +287,7 @@ const Home = () => {
               </div>
             ) : (
               <div className="selected-location">
-                ✅ {currentLocation?.name}
+                 {currentLocation?.name}
                 <button onClick={() => {
                   setQrScanned(false);
                   setCurrentLocation(null);
@@ -319,7 +300,7 @@ const Home = () => {
 
           {/* Destination Dropdown */}
           <div className="destination-section">
-            <h3>🎯 Destination</h3>
+            <h3> Destination</h3>
             <select
               onChange={handleDestinationSelect}
               className="dropdown"
@@ -339,7 +320,7 @@ const Home = () => {
             disabled={!qrScanned || !destination || loading}
             className="find-route-btn"
           >
-            {loading ? 'Finding...' : '🧭 Navigate'}
+            {loading ? 'Finding...' : ' Navigate'}
           </button>
 
           {error && <div className="error">{error}</div>}
@@ -372,7 +353,7 @@ const Home = () => {
 
           {permission === 'prompt' && (
             <button onClick={requestPermission} className="compass-btn">
-              🧭 Enable Compass
+               Enable Compass
             </button>
           )}
         </div>

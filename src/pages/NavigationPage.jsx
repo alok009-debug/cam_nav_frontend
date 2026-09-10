@@ -29,18 +29,28 @@ const NavigationPage = () => {
     const { heading, permission, requestPermission } = useCompass();
 
     // ============ FETCH LOCATIONS ============
+    const fetchLocations = async () => {
+        try {
+            setFetchingLocations(true);
+            const adminId = localStorage.getItem('campusAdminId');
+            const url = adminId
+                ? `/navigation/locations?admin_id=${adminId}`
+                : '/navigation/public-locations';
+
+            const res = await api.get(url);
+            console.log('📍 All locations:', res.data);
+            setLocations(res.data);
+            
+        } catch (err) {
+            console.error('Error fetching locations:', err);
+            setError('Failed to load locations');
+        } finally {
+            setFetchingLocations(false);
+        }
+    };
+
+    // Initial fetch on mount
     useEffect(() => {
-        const fetchLocations = async () => {
-            try {
-                const res = await api.get('/navigation/all-locations');
-                setLocations(res.data);
-            } catch (err) {
-                console.error('Error fetching locations:', err);
-                setError('Failed to load locations');
-            } finally {
-                setFetchingLocations(false);
-            }
-        };
         fetchLocations();
     }, []);
 
@@ -62,13 +72,22 @@ const NavigationPage = () => {
     // ============ QR SCAN HANDLER ============
     const handleQRScan = async (qrHash) => {
         console.log('📱 QR Scanned:', qrHash);
-        
+
         try {
             const response = await api.post('/navigation/validate-qr', { qrHash });
             console.log('📡 QR Validation Response:', response.data);
-            
+
             if (response.data.success) {
-                // Find the location in our list
+                const adminId = response.data.adminId || response.data.location?.admin_id;
+                if (adminId) {
+                    localStorage.setItem('campusAdminId', adminId);
+                    console.log('Admin ID stored:', adminId);
+                    
+                    // ✅ AFTER QR SCAN - RELOAD LOCATIONS
+                    await fetchLocations();
+                    console.log('🔄 Locations reloaded after QR scan');
+                }
+
                 const loc = locations.find(l => l.locId === response.data.location.locId);
                 if (loc) {
                     setCurrentLocation({
@@ -93,7 +112,7 @@ const NavigationPage = () => {
                 console.log('✅ QR Validated:', response.data.location.name);
             }
         } catch (err) {
-            console.error('❌ QR validation error:', err);
+            console.error('QR validation error:', err);
             setError('Invalid QR code. Please try again.');
             setQrScanned(false);
         }
@@ -297,7 +316,7 @@ const NavigationPage = () => {
                                 if (loc) handleManualLocation(loc);
                             }}
                             className="dropdown"
-                            defaultValue=""
+                            value={currentLocation?.locId || ""}
                         >
                             <option value="">-- Select Current Location --</option>
                             {locations.map(loc => (
@@ -314,7 +333,7 @@ const NavigationPage = () => {
                         <select
                             onChange={handleDestinationSelect}
                             className="dropdown"
-                            defaultValue=""
+                            value={destination?.locId || ""}
                         >
                             <option value="">-- Select Destination --</option>
                             {locations.map(loc => (
@@ -375,8 +394,8 @@ const NavigationPage = () => {
                                         <div className="step-content">
                                             <span className="step-icon">
                                                 {dir.direction?.includes('left') ? '↩️' :
-                                                 dir.direction?.includes('right') ? '↪️' :
-                                                 dir.direction?.includes('straight') ? '⬆️' : '📍'}
+                                                    dir.direction?.includes('right') ? '↪️' :
+                                                        dir.direction?.includes('straight') ? '⬆️' : '📍'}
                                             </span>
                                             <span className="step-text">{dir.direction}</span>
                                             <span className="step-dist">{dir.distance}m</span>

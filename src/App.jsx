@@ -12,10 +12,10 @@ function App() {
     
     <BrowserRouter>
       <nav className="nav-bar">
-        <Link to="/">🏠 Home</Link>
-        <Link to="/navigate">🧭 Navigate</Link>
-        <Link to="/admin/login">🔐 Admin</Link>
-        <Link to="/test">🧪 Simple Test</Link>
+        <Link to="/">Home</Link>
+        <Link to="/navigate">Navigate</Link>
+        <Link to="/admin/login">Admin</Link>
+        <Link to="/test">Simple Test</Link>
       </nav>
 
       <Routes>
