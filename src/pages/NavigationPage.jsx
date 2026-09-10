@@ -40,7 +40,6 @@ const NavigationPage = () => {
             const res = await api.get(url);
             console.log('📍 All locations:', res.data);
             setLocations(res.data);
-            
         } catch (err) {
             console.error('Error fetching locations:', err);
             setError('Failed to load locations');
@@ -49,7 +48,6 @@ const NavigationPage = () => {
         }
     };
 
-    // Initial fetch on mount
     useEffect(() => {
         fetchLocations();
     }, []);
@@ -62,7 +60,6 @@ const NavigationPage = () => {
         setError('');
     };
 
-    // ============ CANCEL SCANNING ============
     const cancelScanning = () => {
         setShowScanner(false);
         setStopScanner(true);
@@ -72,7 +69,6 @@ const NavigationPage = () => {
     // ============ QR SCAN HANDLER ============
     const handleQRScan = async (qrHash) => {
         console.log('📱 QR Scanned:', qrHash);
-
         try {
             const response = await api.post('/navigation/validate-qr', { qrHash });
             console.log('📡 QR Validation Response:', response.data);
@@ -81,11 +77,7 @@ const NavigationPage = () => {
                 const adminId = response.data.adminId || response.data.location?.admin_id;
                 if (adminId) {
                     localStorage.setItem('campusAdminId', adminId);
-                    console.log('Admin ID stored:', adminId);
-                    
-                    // ✅ AFTER QR SCAN - RELOAD LOCATIONS
                     await fetchLocations();
-                    console.log('🔄 Locations reloaded after QR scan');
                 }
 
                 const loc = locations.find(l => l.locId === response.data.location.locId);
@@ -109,7 +101,6 @@ const NavigationPage = () => {
                 setStopScanner(true);
                 setIsScanning(false);
                 setError('');
-                console.log('✅ QR Validated:', response.data.location.name);
             }
         } catch (err) {
             console.error('QR validation error:', err);
@@ -131,7 +122,6 @@ const NavigationPage = () => {
         setError('');
     };
 
-    // ============ RESET LOCATION ============
     const resetLocation = () => {
         setCurrentLocation(null);
         setQrScanned(false);
@@ -147,7 +137,7 @@ const NavigationPage = () => {
         setError('');
     };
 
-    // ============ FIND ROUTE ============
+    // ============ FIND ROUTE (FIXED for new API structure) ============
     const findRoute = async () => {
         if (!currentLocation || !destination) {
             setError('Please select both current location and destination');
@@ -166,15 +156,50 @@ const NavigationPage = () => {
                 endId: destination.locId
             });
 
+            console.log('📡 Full API Response:', response.data);
+
             if (response.data.success) {
-                setRoute(response.data);
+                const data = response.data;
+
+                // ✅ NORMALIZE the response to match frontend expectations
+                const normalizedRoute = {
+                    // Basic info
+                    from: data.path?.[0]?.name || currentLocation.name,
+                    to: data.path?.[data.path.length - 1]?.name || destination.name,
+                    totalDistance: data.totalDistanceMeters || 0,
+                    estimatedTime: data.estimatedWalkTimeMinutes || 0,
+
+                    // Path nodes (array of node objects)
+                    pathNodes: (data.path || []).map(node => ({
+                        node_id: node.nodeId,
+                        node_name: node.name,
+                        latitude: node.latitude,
+                        longitude: node.longitude,
+                        building: node.building,
+                        floor: node.floor
+                    })),
+
+                    // Directions (normalized from new structure)
+                    directions: (data.directions || []).map(dir => ({
+                        from: dir.fromNodeId,
+                        to: dir.toNodeId,
+                        direction: dir.instruction || 'Continue walking',
+                        distance: 0 // Not provided by new API; can be calculated if needed
+                    })),
+
+                    // Raw data for debugging
+                    raw: data
+                };
+
+                console.log('✅ Normalized route:', normalizedRoute);
+                setRoute(normalizedRoute);
                 setIsNavigating(true);
             } else {
                 setError(response.data.message || 'No path found');
             }
         } catch (err) {
             console.error('Navigation error:', err);
-            setError(err.response?.data?.message || 'Failed to find path');
+            setError(err.response?.data?.message || err.response?.data?.error || 'Failed to find path');
         } finally {
             setLoading(false);
         }
@@ -252,7 +277,6 @@ const NavigationPage = () => {
 
     const distanceToFinal = getDistanceToDestination();
     const arrowRotation = getArrowRotation();
-    const currentStep = getCurrentStep();
 
     if (fetchingLocations) {
         return <div className="loading">Loading locations...</div>;
@@ -260,17 +284,16 @@ const NavigationPage = () => {
 
     return (
         <div className="nav-page">
-            {/* ============ HEADER ============ */}
+            {/* HEADER */}
             <header className="nav-header">
                 <h1>🧭 Directions</h1>
                 <p>Start: {currentLocation?.name || 'Not selected'}</p>
                 <p>End: {destination?.name || 'Not selected'}</p>
             </header>
 
-            {/* ============ LOCATION SELECTION ============ */}
+            {/* LOCATION SELECTION */}
             {!isNavigating && !arrived && (
                 <div className="location-section">
-                    {/* ============ QR SCANNER SECTION ============ */}
                     <div className="qr-section">
                         {!qrScanned ? (
                             <>
@@ -307,7 +330,6 @@ const NavigationPage = () => {
                         )}
                     </div>
 
-                    {/* ============ MANUAL LOCATION SELECTION ============ */}
                     <div className="manual-select">
                         <label>📍 Your Location</label>
                         <select
@@ -327,7 +349,6 @@ const NavigationPage = () => {
                         </select>
                     </div>
 
-                    {/* ============ DESTINATION SELECTION ============ */}
                     <div className="dest-select">
                         <label>🎯 Destination</label>
                         <select
@@ -356,10 +377,10 @@ const NavigationPage = () => {
                 </div>
             )}
 
-            {/* ============ NAVIGATION VIEW ============ */}
+            {/* NAVIGATION VIEW */}
             {isNavigating && route && !arrived && (
                 <div className="nav-view">
-                    {/* ============ MODE SWITCH ============ */}
+                    {/* MODE SWITCH */}
                     <div className="mode-switch">
                         <button
                             className={navigationMode === 'text' ? 'active' : ''}
@@ -375,7 +396,7 @@ const NavigationPage = () => {
                         </button>
                     </div>
 
-                    {/* ============ TEXT DIRECTIONS ============ */}
+                    {/* TEXT DIRECTIONS */}
                     {navigationMode === 'text' && (
                         <div className="text-directions">
                             <div className="route-header">
@@ -385,23 +406,28 @@ const NavigationPage = () => {
                             </div>
 
                             <div className="directions-list">
-                                {route.directions?.map((dir, index) => (
-                                    <div
-                                        key={index}
-                                        className={`direction-step ${index === currentStepIndex ? 'active' : ''} ${index < currentStepIndex ? 'completed' : ''}`}
-                                    >
-                                        <span className="step-num">{index + 1}</span>
-                                        <div className="step-content">
-                                            <span className="step-icon">
-                                                {dir.direction?.includes('left') ? '↩️' :
-                                                    dir.direction?.includes('right') ? '↪️' :
-                                                        dir.direction?.includes('straight') ? '⬆️' : '📍'}
-                                            </span>
-                                            <span className="step-text">{dir.direction}</span>
-                                            <span className="step-dist">{dir.distance}m</span>
+                                {route.directions && route.directions.length > 0 ? (
+                                    route.directions.map((dir, index) => (
+                                        <div
+                                            key={index}
+                                            className={`direction-step ${index === currentStepIndex ? 'active' : ''} ${index < currentStepIndex ? 'completed' : ''}`}
+                                        >
+                                            <span className="step-num">{index + 1}</span>
+                                            <div className="step-content">
+                                                <span className="step-icon">
+                                                    {dir.direction?.toLowerCase().includes('left') ? '↩️' :
+                                                        dir.direction?.toLowerCase().includes('right') ? '↪️' :
+                                                            dir.direction?.toLowerCase().includes('straight') ? '⬆️' : '🚶'}
+                                                </span>
+                                                <span className="step-text">{dir.direction}</span>
+                                            </div>
                                         </div>
+                                    ))
+                                ) : (
+                                    <div className="no-directions">
+                                        ⚠️ No directions available
                                     </div>
-                                ))}
+                                )}
                             </div>
 
                             <div className="route-summary">
@@ -419,7 +445,7 @@ const NavigationPage = () => {
                         </div>
                     )}
 
-                    {/* ============ AR ARROW VIEW ============ */}
+                    {/* AR ARROW VIEW */}
                     {navigationMode === 'ar' && (
                         <div className="ar-view">
                             <div className="ar-container">
@@ -456,14 +482,14 @@ const NavigationPage = () => {
                         </div>
                     )}
 
-                    {/* ============ STOP BUTTON ============ */}
+                    {/* STOP BUTTON */}
                     <button onClick={stopNavigation} className="stop-btn">
                         ✕ Stop Navigation
                     </button>
                 </div>
             )}
 
-            {/* ============ ARRIVAL VIEW ============ */}
+            {/* ARRIVAL VIEW */}
             {arrived && (
                 <div className="arrival-card">
                     <div className="arrival-icon">🎉</div>

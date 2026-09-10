@@ -19,7 +19,7 @@ function App() {
       </nav>
 
       <Routes>
-        <Route path="/" element={<Home />} />
+        <Route path="/" element={<Home/>}/ >
         <Route path="/navigate" element={<NavigationPage />} />
         <Route path="/test" element={<SimpleTest />} />
         <Route path="/admin/login" element={<AdminLogin />} />
