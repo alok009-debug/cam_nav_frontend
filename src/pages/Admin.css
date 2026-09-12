@@ -794,3 +794,19 @@
     font-size: 13px;
     margin-left: 28px;
 }
+.btn-tools {
+    padding: 10px 20px;
+    background: #9b59b6;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.3s;
+    margin-right: 8px;
+}
+
+.btn-tools:hover {
+    background: #8e44ad;
+}

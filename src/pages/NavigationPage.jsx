@@ -265,7 +265,7 @@ const NavigationPage = () => {
         if (!isNavigating || !route || arrived) return;
 
         const dist = getDistanceToDestination();
-        if (dist !== null && dist < 10) {
+        if (dist !== null && dist < 15) {
             if (currentStepIndex < route.directions.length - 1) {
                 setCurrentStepIndex(prev => prev + 1);
             } else {

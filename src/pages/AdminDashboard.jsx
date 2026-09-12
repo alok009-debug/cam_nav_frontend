@@ -67,28 +67,6 @@ const AdminDashboard = () => {
     }
   };
 
-  // ============ CREATE HUB AND CONNECT ============
-  const createHubAndConnect = async () => {
-    if (!window.confirm('This will create a central hub and connect all isolated nodes. Continue?')) return;
-
-    setGenerating(true);
-    setError('');
-    setSuccess('');
-
-    try {
-      const response = await api.post('/admin/create-hub', {}, {
-        headers: { Authorization: `Bearer ${localStorage.getItem("adminToken")}` }
-      });
-      setSuccess(`✅ ${response.data.message}`);
-      await fetchLocations(adminId);
-    } catch (err) {
-      console.error('Error creating hub:', err);
-      setError(err.response?.data?.error || 'Failed to create hub');
-    } finally {
-      setGenerating(false);
-    }
-  };
-
 
   // Add this function
   const smartConnect = async () => {
@@ -251,8 +229,18 @@ const AdminDashboard = () => {
   const [qrImage, setQrImage] = useState(null);
   const [qrLoading, setQrLoading] = useState(false);
 
-  const generateQRCode = async (locId) => {
+  const generateQRCode = async (locId, locName) => {
+    console.log(' generateQRCode called with:', { locId, locName });
+
+    //  Fallback so we never get "null" in the filename
+    const safeName = (locName && locName.trim())
+      ? locName.trim()
+      : `Location_${locId}`;
+
     setQrLoading(true);
+    setCurrentLocId(locId);
+    setCurrentLocName(safeName);
+
     try {
       const response = await api.get(`/admin/qr/generate/${locId}`, {
         headers: {
@@ -261,7 +249,6 @@ const AdminDashboard = () => {
         responseType: 'blob'
       });
 
-      // Create image URL from blob
       const imageUrl = URL.createObjectURL(response.data);
       setQrImage(imageUrl);
     } catch (err) {
@@ -271,21 +258,28 @@ const AdminDashboard = () => {
       setQrLoading(false);
     }
   };
-
-  // Download QR code
   const downloadQR = () => {
-    if (!qrImage) return;
+    if (!qrImage) {
+      alert('No QR code to download');
+      return;
+    }
 
-    // Create a temporary link element
+    // Make sure filename is never null or empty
+    const safeName = (currentLocName && currentLocName.trim())
+      ? currentLocName.trim().replace(/[^a-zA-Z0-9_-]/g, '_')
+      : `Location_${currentLocId || 'unknown'}`;
+
+    const fileName = `QR_${safeName}_${currentLocId || ''}.png`;
+
+    console.log('📥 Downloading:', fileName);
+
     const link = document.createElement('a');
     link.href = qrImage;
-    link.download = `QR_${currentLocName.replace(/\s+/g, '_')}_${currentLocId}.png`;
+    link.download = fileName;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
   };
-
-
   // Close QR modal
   const closeQRModal = () => {
     setQrImage(null);
@@ -317,17 +311,17 @@ const AdminDashboard = () => {
         latitude: parseFloat(formData.latitude),
         longitude: parseFloat(formData.longitude),
         floor: formData.floor ? parseInt(formData.floor) : null,
-        create_node: formData.create_node || false,  // ✅ Send this flag
+        create_node: formData.create_node || false,
       };
 
       if (editingLocation) {
-        // ✅ FIX: Use the correct URL with ID
+        //  FIX: Use the correct URL with ID
         await api.put(`/admin/locations/${editingLocation.locId}`, data);
 
-        setSuccess('✅ Location updated successfully!');
+        setSuccess(' Location updated successfully!');
       } else {
         await api.post('/admin/locations', data);
-        setSuccess('✅ Location added successfully!');
+        setSuccess(' Location added successfully!');
       }
 
       await refreshLocations();
@@ -353,9 +347,9 @@ const AdminDashboard = () => {
 
     try {
       await api.delete(`/admin/locations/${locId}`);
-      setSuccess('✅ Location deleted successfully!');
+      setSuccess('Location deleted successfully!');
 
-      // ✅ Refresh locations after delete
+      // Refresh locations after delete
       await refreshLocations();
 
       setTimeout(() => setSuccess(''), 2000);
@@ -382,6 +376,12 @@ const AdminDashboard = () => {
         <div className="admin-header-right">
           <button onClick={openAddModal} className="btn-primary">
             ➕ Add Location
+          </button>
+          <button
+            onClick={() => navigate('/admin/tools')}
+            className="btn-tools"
+          >
+            🛠️ Advanced Tools
           </button>
           <button onClick={handleLogout} className="btn-logout">
             Logout

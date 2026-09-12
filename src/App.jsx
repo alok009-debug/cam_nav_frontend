@@ -4,7 +4,7 @@ import AdminLogin from './pages/AdminLogin';
 import AdminSignup from './pages/AdminSignUp';
 import AdminDashboard from './pages/AdminDashboard';
 import NavigationPage from './pages/NavigationPage';
-import SimpleTest from './pages/SimpleTest';
+import AdminTools from './pages/AdminTools';
 import './App.css';
 
 function App() {
@@ -15,16 +15,17 @@ function App() {
         <Link to="/">Home</Link>
         <Link to="/navigate">Navigate</Link>
         <Link to="/admin/login">Admin</Link>
-        <Link to="/test">Simple Test</Link>
+        <Link to="/tools">Admin tools</Link>
       </nav>
 
       <Routes>
-        <Route path="/" element={<Home/>}/ >
+        <Route path="/" element={<Home/>} />
         <Route path="/navigate" element={<NavigationPage />} />
-        <Route path="/test" element={<SimpleTest />} />
+        <Route path="/tools" element={<AdminTools />} />
         <Route path="/admin/login" element={<AdminLogin />} />
         <Route path="/admin/dashboard" element={<AdminDashboard />} />
         <Route path="/admin/signup" element={<AdminSignup />} />
+        <Route path="/admin/tools" element={<AdminTools />} /> 
 
       </Routes>
     </BrowserRouter>
