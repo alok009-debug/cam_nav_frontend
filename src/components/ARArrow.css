@@ -1,0 +1,121 @@
+.ar-arrow-wrapper {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 40px 0;
+    position: relative;
+}
+
+.ar-arrow-3d {
+    width: 140px;
+    height: 140px;
+    color: #2ecc71;
+    transition: transform 0.15s ease-out;
+    filter: drop-shadow(0 0 20px rgba(46, 204, 113, 0.6));
+    animation: floatArrow 2s ease-in-out infinite;
+}
+
+.arrow-svg {
+    width: 100%;
+    height: 100%;
+}
+
+.arrow-glow {
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(46, 204, 113, 0.3), transparent 70%);
+    pointer-events: none;
+}
+
+.ar-arrow-3d.pulse {
+    animation: pulseArrow 1s ease-in-out infinite;
+}
+
+.arrow-distance-bubble {
+    margin-top: 20px;
+    padding: 8px 18px;
+    background: rgba(0, 0, 0, 0.7);
+    color: white;
+    border-radius: 24px;
+    font-size: 16px;
+    font-weight: 600;
+    backdrop-filter: blur(8px);
+}
+
+@keyframes floatArrow {
+    0%, 100% { transform: translateY(0) rotate(var(--rotation, 0deg)); }
+    50% { transform: translateY(-8px) rotate(var(--rotation, 0deg)); }
+}
+
+@keyframes pulseArrow {
+    0%, 100% { filter: drop-shadow(0 0 20px rgba(46, 204, 113, 0.6)); }
+    50% { filter: drop-shadow(0 0 40px rgba(46, 204, 113, 1)); }
+}
+
+.ar-view {
+    padding: 20px;
+    text-align: center;
+}
+
+.ar-hint {
+    color: #7f8c8d;
+    font-size: 14px;
+    margin-top: 20px;
+}
+
+.ar-heading {
+    color: #2c3e50;
+    font-size: 13px;
+    font-weight: 600;
+    margin-top: 5px;
+}
+
+.ar-info {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-top: 24px;
+}
+
+.ar-dest,
+.ar-dist {
+    background: #f8f9fa;
+    padding: 16px;
+    border-radius: 12px;
+    text-align: center;
+}
+
+.ar-dest span,
+.ar-dist span {
+    display: block;
+    font-size: 12px;
+    color: #7f8c8d;
+    margin-bottom: 4px;
+}
+
+.ar-dest strong,
+.ar-dist strong {
+    display: block;
+    font-size: 18px;
+    color: #2c3e50;
+}
+
+.compass-btn {
+    width: 100%;
+    padding: 14px;
+    background: #f39c12;
+    color: white;
+    border: none;
+    border-radius: 10px;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    margin-top: 20px;
+    transition: background 0.3s;
+}
+
+.compass-btn:hover {
+    background: #e67e22;
+}

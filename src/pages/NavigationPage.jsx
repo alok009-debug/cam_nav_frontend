@@ -6,6 +6,9 @@ import { calculateBearing, calculateDistance } from '../utils/bearing';
 import QRScanner from '../components/QRScanner';
 import './NavigationPage.css';
 
+import ARArrow from '../components/ARArrow';
+import { smoothAngle } from '../utils/smoothing';
+
 const NavigationPage = () => {
     // ============ STATE ============
     const [locations, setLocations] = useState([]);
@@ -23,10 +26,16 @@ const NavigationPage = () => {
     const [isScanning, setIsScanning] = useState(false);
     const [navigationMode, setNavigationMode] = useState('text');
     const [fetchingLocations, setFetchingLocations] = useState(true);
+    const [smoothedHeading, setSmoothedHeading] = useState(null);
 
     // ============ HOOKS ============
     const { location: gpsLocation } = useGeolocation();
     const { heading, permission, requestPermission } = useCompass();
+    useEffect(() => {
+        if (heading === null) return;
+        setSmoothedHeading(prev => smoothAngle(prev, heading, 0.15));
+    }, [heading]);
+
 
     // ============ FETCH LOCATIONS ============
     const fetchLocations = async () => {
@@ -234,10 +243,8 @@ const NavigationPage = () => {
             destination.latitude, destination.longitude
         );
     };
-
-    // ============ ARROW ROTATION ============
     const getArrowRotation = () => {
-        if (!route || !destination || heading === null) return 0;
+        if (!route || !destination || smoothedHeading === null) return 0;
         const currentPos = getCurrentPosition();
         if (!currentPos) return 0;
 
@@ -246,7 +253,7 @@ const NavigationPage = () => {
             destination.latitude, destination.longitude
         );
 
-        let diff = bearing - heading;
+        let diff = bearing - smoothedHeading;
         if (diff > 180) diff -= 360;
         if (diff < -180) diff += 360;
         return diff;
@@ -265,12 +272,18 @@ const NavigationPage = () => {
         if (!isNavigating || !route || arrived) return;
 
         const dist = getDistanceToDestination();
+
+        // ✅ Arrival check (15 m threshold)
         if (dist !== null && dist < 15) {
             if (currentStepIndex < route.directions.length - 1) {
                 setCurrentStepIndex(prev => prev + 1);
+                // ✅ Buzz when moving to next waypoint
+                if ('vibrate' in navigator) navigator.vibrate(100);
             } else {
                 setArrived(true);
                 setIsNavigating(false);
+                // ✅ Buzz pattern on arrival
+                if ('vibrate' in navigator) navigator.vibrate([200, 100, 200]);
             }
         }
     }, [gpsLocation, heading, isNavigating, route, currentStepIndex, arrived]);
@@ -448,18 +461,18 @@ const NavigationPage = () => {
                     {/* AR ARROW VIEW */}
                     {navigationMode === 'ar' && (
                         <div className="ar-view">
-                            <div className="ar-container">
-                                <div
-                                    className="ar-arrow"
-                                    style={{ transform: `rotate(${arrowRotation}deg)` }}
-                                >
-                                    ⬆️
-                                </div>
-                                <p className="ar-hint">Point your phone in the direction of the arrow</p>
-                                {heading !== null && (
-                                    <p className="ar-heading">🧭 Heading: {Math.round(heading)}°</p>
-                                )}
-                            </div>
+                            {/* ✅ 3D AR Arrow */}
+                            <ARArrow
+                                rotation={arrowRotation}
+                                distance={distanceToFinal}
+                                isClose={distanceToFinal !== null && distanceToFinal < 30}
+                            />
+
+                            <p className="ar-hint">Point your phone in the direction of the arrow</p>
+
+                            {smoothedHeading !== null && (
+                                <p className="ar-heading">🧭 Heading: {Math.round(smoothedHeading)}°</p>
+                            )}
 
                             <div className="ar-info">
                                 <div className="ar-dest">
