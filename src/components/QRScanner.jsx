@@ -35,7 +35,7 @@ const QRScanner = ({ onScanSuccess, onScanError, stopScanner }) => {
 
     const startScanner = async () => {
       try {
-        console.log('📷 Initializing scanner...');
+        console.log(<i class="ri-qr-scan-line"></i>,' Initializing scanner...');
         
         // Check if element exists
         const element = document.getElementById('qr-reader');
@@ -55,7 +55,7 @@ const QRScanner = ({ onScanSuccess, onScanError, stopScanner }) => {
             // Prevent multiple scans
             if (hasScanned.current || !isMounted.current) return;
             
-            console.log('✅ QR scanned:', decodedText);
+            console.log(' QR scanned:', decodedText);
             hasScanned.current = true;
             setIsScanning(false);
             
@@ -87,7 +87,7 @@ const QRScanner = ({ onScanSuccess, onScanError, stopScanner }) => {
         if (isMounted.current) {
           setIsScanning(true);
           setError(null);
-          console.log('✅ Scanner active');
+          console.log('Scanner active');
         }
       } catch (error) {
         console.error('Scanner error:', error);
@@ -151,7 +151,7 @@ const QRScanner = ({ onScanSuccess, onScanError, stopScanner }) => {
           color: '#3498db',
           fontSize: '14px',
         }}>
-          ✅ QR Code scanned successfully!
+           QR Code scanned successfully!
         </p>
       )}
       {error && (

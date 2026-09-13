@@ -5,7 +5,7 @@ import { useCompass } from '../hooks/useCompass';
 import { calculateBearing, calculateDistance } from '../utils/bearing';
 import QRScanner from '../components/QRScanner';
 import './NavigationPage.css';
-
+import "remixicon/fonts/remixicon.css";
 import ARArrow from '../components/ARArrow';
 import { smoothAngle } from '../utils/smoothing';
 
@@ -296,232 +296,238 @@ const NavigationPage = () => {
     }
 
     return (
-        <div className="nav-page">
-            {/* HEADER */}
-            <header className="nav-header">
-                <h1>🧭 Directions</h1>
-                <p>Start: {currentLocation?.name || 'Not selected'}</p>
-                <p>End: {destination?.name || 'Not selected'}</p>
-            </header>
 
-            {/* LOCATION SELECTION */}
-            {!isNavigating && !arrived && (
-                <div className="location-section">
-                    <div className="qr-section">
-                        {!qrScanned ? (
-                            <>
-                                {!showScanner ? (
-                                    <button onClick={startScanning} className="scan-btn">
-                                        📷 Scan QR Code
-                                    </button>
-                                ) : (
-                                    <div className="scanner-container">
-                                        <div className="scanner-header">
-                                            <span>📷 Scanning...</span>
-                                            <button onClick={cancelScanning} className="cancel-scan-btn">
-                                                ✕ Cancel
-                                            </button>
+        <div>
+            <div className="nav-page">
+                {/* HEADER */}
+                <header className="nav-header">
+                    <h1>🧭 Directions</h1>
+                    <p>Start: {currentLocation?.name || 'Not selected'}</p>
+                    <p>End: {destination?.name || 'Not selected'}</p>
+                </header>
+
+                {/* LOCATION SELECTION */}
+                {!isNavigating && !arrived && (
+                    <div className="location-section">
+                        <div className="qr-section">
+                            {!qrScanned ? (
+                                <>
+                                    {!showScanner ? (
+                                        <button onClick={startScanning} className="scan-btn">
+                                            📷 Scan QR Code
+                                        </button>
+                                    ) : (
+                                        <div className="scanner-container">
+                                            <div className="scanner-header">
+                                                <span>📷 Scanning...</span>
+                                                <button onClick={cancelScanning} className="cancel-scan-btn">
+                                                    ✕ Cancel
+                                                </button>
+                                            </div>
+                                            <QRScanner
+                                                onScanSuccess={handleQRScan}
+                                                onScanError={(err) => setError(err)}
+                                                stopScanner={stopScanner}
+                                            />
                                         </div>
-                                        <QRScanner
-                                            onScanSuccess={handleQRScan}
-                                            onScanError={(err) => setError(err)}
-                                            stopScanner={stopScanner}
-                                        />
+                                    )}
+                                    <div className="divider">— OR —</div>
+                                </>
+                            ) : (
+                                <div className="location-confirmed">
+                                    <span>✅ Current: <strong>{currentLocation?.name}</strong></span>
+                                    <div className="location-actions">
+                                        <button onClick={resetLocation} className="change-btn">
+                                            Rescan
+                                        </button>
                                     </div>
-                                )}
-                                <div className="divider">— OR —</div>
-                            </>
-                        ) : (
-                            <div className="location-confirmed">
-                                <span>✅ Current: <strong>{currentLocation?.name}</strong></span>
-                                <div className="location-actions">
-                                    <button onClick={resetLocation} className="change-btn">
-                                        Rescan
-                                    </button>
+                                </div>
+                            )}
+                        </div>
+
+                        <div className="manual-select">
+                            <label>📍 Your Location</label>
+                            <select
+                                onChange={(e) => {
+                                    const loc = locations.find(l => l.locId === parseInt(e.target.value));
+                                    if (loc) handleManualLocation(loc);
+                                }}
+                                className="dropdown"
+                                value={currentLocation?.locId || ""}
+                            >
+                                <option value="">-- Select Current Location --</option>
+                                {locations.map(loc => (
+                                    <option key={loc.locId} value={loc.locId}>
+                                        {loc.name}
+                                    </option>
+                                ))}
+                            </select>
+                        </div>
+
+                        <div className="dest-select">
+                            <label>🎯 Destination</label>
+                            <select
+                                onChange={handleDestinationSelect}
+                                className="dropdown"
+                                value={destination?.locId || ""}
+                            >
+                                <option value="">-- Select Destination --</option>
+                                {locations.map(loc => (
+                                    <option key={loc.locId} value={loc.locId}>
+                                        {loc.name}
+                                    </option>
+                                ))}
+                            </select>
+                        </div>
+
+                        <button
+                            onClick={findRoute}
+                            disabled={!qrScanned || !destination || loading}
+                            className="find-btn"
+                        >
+                            {loading ? '⏳ Finding path...' : '🗺️ Find Path'}
+                        </button>
+
+                        {error && <div className="error">{error}</div>}
+                    </div>
+                )}
+
+                {/* NAVIGATION VIEW */}
+                {isNavigating && route && !arrived && (
+                    <div className="nav-view">
+                        {/* MODE SWITCH */}
+                        <div className="mode-switch">
+                            <button
+                                className={navigationMode === 'text' ? 'active' : ''}
+                                onClick={() => setNavigationMode('text')}
+                            >
+                                📝 Text
+                            </button>
+                            <button
+                                className={navigationMode === 'ar' ? 'active' : ''}
+                                onClick={() => setNavigationMode('ar')}
+                            >
+                                🧭 AR Arrow
+                            </button>
+                        </div>
+
+                        {/* TEXT DIRECTIONS */}
+                        {navigationMode === 'text' && (
+                            <div className="text-directions">
+                                <div className="route-header">
+                                    <span className="route-from">📍 {route.from}</span>
+                                    <span className="route-arrow">→</span>
+                                    <span className="route-to">🎯 {route.to}</span>
+                                </div>
+
+                                <div className="directions-list">
+                                    {route.directions && route.directions.length > 0 ? (
+                                        route.directions.map((dir, index) => (
+                                            <div
+                                                key={index}
+                                                className={`direction-step ${index === currentStepIndex ? 'active' : ''} ${index < currentStepIndex ? 'completed' : ''}`}
+                                            >
+                                                <span className="step-num">{index + 1}</span>
+                                                <div className="step-content">
+                                                    <span className="step-icon">
+                                                        {dir.direction?.toLowerCase().includes('left') ? '↩️' :
+                                                            dir.direction?.toLowerCase().includes('right') ? '↪️' :
+                                                                dir.direction?.toLowerCase().includes('straight') ? '⬆️' : '🚶'}
+                                                    </span>
+                                                    <span className="step-text">{dir.direction}</span>
+                                                </div>
+                                            </div>
+                                        ))
+                                    ) : (
+                                        <div className="no-directions">
+                                            ⚠️ No directions available
+                                        </div>
+                                    )}
+                                </div>
+
+                                <div className="route-summary">
+                                    <div className="summary-item">
+                                        <span>Total Distance</span>
+                                        <span>{route.totalDistance}m</span>
+                                    </div>
+                                    <div className="summary-item">
+                                        <span>Remaining</span>
+                                        <span>
+                                            {distanceToFinal !== null ? `${Math.round(distanceToFinal)}m` : '...'}
+                                        </span>
+                                    </div>
                                 </div>
                             </div>
                         )}
-                    </div>
 
-                    <div className="manual-select">
-                        <label>📍 Your Location</label>
-                        <select
-                            onChange={(e) => {
-                                const loc = locations.find(l => l.locId === parseInt(e.target.value));
-                                if (loc) handleManualLocation(loc);
-                            }}
-                            className="dropdown"
-                            value={currentLocation?.locId || ""}
-                        >
-                            <option value="">-- Select Current Location --</option>
-                            {locations.map(loc => (
-                                <option key={loc.locId} value={loc.locId}>
-                                    {loc.name}
-                                </option>
-                            ))}
-                        </select>
-                    </div>
+                        {/* AR ARROW VIEW */}
+                        {navigationMode === 'ar' && (
+                            <div className="ar-view">
+                                {/* ✅ 3D AR Arrow */}
+                                <ARArrow
+                                    rotation={arrowRotation}
+                                    distance={distanceToFinal}
+                                    isClose={distanceToFinal !== null && distanceToFinal < 30}
+                                />
 
-                    <div className="dest-select">
-                        <label>🎯 Destination</label>
-                        <select
-                            onChange={handleDestinationSelect}
-                            className="dropdown"
-                            value={destination?.locId || ""}
-                        >
-                            <option value="">-- Select Destination --</option>
-                            {locations.map(loc => (
-                                <option key={loc.locId} value={loc.locId}>
-                                    {loc.name}
-                                </option>
-                            ))}
-                        </select>
-                    </div>
+                                <p className="ar-hint">Point your phone in the direction of the arrow</p>
 
-                    <button
-                        onClick={findRoute}
-                        disabled={!qrScanned || !destination || loading}
-                        className="find-btn"
-                    >
-                        {loading ? '⏳ Finding path...' : '🗺️ Find Path'}
-                    </button>
+                                {smoothedHeading !== null && (
+                                    <p className="ar-heading">🧭 Heading: {Math.round(smoothedHeading)}°</p>
+                                )}
 
-                    {error && <div className="error">{error}</div>}
-                </div>
-            )}
-
-            {/* NAVIGATION VIEW */}
-            {isNavigating && route && !arrived && (
-                <div className="nav-view">
-                    {/* MODE SWITCH */}
-                    <div className="mode-switch">
-                        <button
-                            className={navigationMode === 'text' ? 'active' : ''}
-                            onClick={() => setNavigationMode('text')}
-                        >
-                            📝 Text
-                        </button>
-                        <button
-                            className={navigationMode === 'ar' ? 'active' : ''}
-                            onClick={() => setNavigationMode('ar')}
-                        >
-                            🧭 AR Arrow
-                        </button>
-                    </div>
-
-                    {/* TEXT DIRECTIONS */}
-                    {navigationMode === 'text' && (
-                        <div className="text-directions">
-                            <div className="route-header">
-                                <span className="route-from">📍 {route.from}</span>
-                                <span className="route-arrow">→</span>
-                                <span className="route-to">🎯 {route.to}</span>
-                            </div>
-
-                            <div className="directions-list">
-                                {route.directions && route.directions.length > 0 ? (
-                                    route.directions.map((dir, index) => (
-                                        <div
-                                            key={index}
-                                            className={`direction-step ${index === currentStepIndex ? 'active' : ''} ${index < currentStepIndex ? 'completed' : ''}`}
-                                        >
-                                            <span className="step-num">{index + 1}</span>
-                                            <div className="step-content">
-                                                <span className="step-icon">
-                                                    {dir.direction?.toLowerCase().includes('left') ? '↩️' :
-                                                        dir.direction?.toLowerCase().includes('right') ? '↪️' :
-                                                            dir.direction?.toLowerCase().includes('straight') ? '⬆️' : '🚶'}
-                                                </span>
-                                                <span className="step-text">{dir.direction}</span>
-                                            </div>
-                                        </div>
-                                    ))
-                                ) : (
-                                    <div className="no-directions">
-                                        ⚠️ No directions available
+                                <div className="ar-info">
+                                    <div className="ar-dest">
+                                        <span>Destination</span>
+                                        <strong>{destination?.name}</strong>
                                     </div>
+                                    <div className="ar-dist">
+                                        <span>Distance</span>
+                                        <strong>
+                                            {distanceToFinal !== null ? `${Math.round(distanceToFinal)}m` : '...'}
+                                        </strong>
+                                    </div>
+                                </div>
+
+                                {permission === 'prompt' && (
+                                    <button onClick={requestPermission} className="compass-btn">
+                                        🧭 Enable Compass
+                                    </button>
                                 )}
                             </div>
+                        )}
 
-                            <div className="route-summary">
-                                <div className="summary-item">
-                                    <span>Total Distance</span>
-                                    <span>{route.totalDistance}m</span>
-                                </div>
-                                <div className="summary-item">
-                                    <span>Remaining</span>
-                                    <span>
-                                        {distanceToFinal !== null ? `${Math.round(distanceToFinal)}m` : '...'}
-                                    </span>
-                                </div>
-                            </div>
-                        </div>
-                    )}
+                        {/* STOP BUTTON */}
+                        <button onClick={stopNavigation} className="stop-btn">
+                            ✕ Stop Navigation
+                        </button>
+                    </div>
+                )}
 
-                    {/* AR ARROW VIEW */}
-                    {navigationMode === 'ar' && (
-                        <div className="ar-view">
-                            {/* ✅ 3D AR Arrow */}
-                            <ARArrow
-                                rotation={arrowRotation}
-                                distance={distanceToFinal}
-                                isClose={distanceToFinal !== null && distanceToFinal < 30}
-                            />
+                {/* ARRIVAL VIEW */}
+                {arrived && (
+                    <div className="arrival-card">
+                        <div className="arrival-icon">🎉</div>
+                        <h2>You have arrived!</h2>
+                        <p>You've reached <strong>{destination?.name}</strong></p>
+                        <button onClick={() => {
+                            setArrived(false);
+                            setRoute(null);
+                            setCurrentStepIndex(0);
+                            setQrScanned(false);
+                            setCurrentLocation(null);
+                            setDestination(null);
+                        }} className="new-route-btn">
+                            🗺️ Plan New Route
+                        </button>
+                    </div>
+                )}
 
-                            <p className="ar-hint">Point your phone in the direction of the arrow</p>
-
-                            {smoothedHeading !== null && (
-                                <p className="ar-heading">🧭 Heading: {Math.round(smoothedHeading)}°</p>
-                            )}
-
-                            <div className="ar-info">
-                                <div className="ar-dest">
-                                    <span>Destination</span>
-                                    <strong>{destination?.name}</strong>
-                                </div>
-                                <div className="ar-dist">
-                                    <span>Distance</span>
-                                    <strong>
-                                        {distanceToFinal !== null ? `${Math.round(distanceToFinal)}m` : '...'}
-                                    </strong>
-                                </div>
-                            </div>
-
-                            {permission === 'prompt' && (
-                                <button onClick={requestPermission} className="compass-btn">
-                                    🧭 Enable Compass
-                                </button>
-                            )}
-                        </div>
-                    )}
-
-                    {/* STOP BUTTON */}
-                    <button onClick={stopNavigation} className="stop-btn">
-                        ✕ Stop Navigation
-                    </button>
-                </div>
-            )}
-
-            {/* ARRIVAL VIEW */}
-            {arrived && (
-                <div className="arrival-card">
-                    <div className="arrival-icon">🎉</div>
-                    <h2>You have arrived!</h2>
-                    <p>You've reached <strong>{destination?.name}</strong></p>
-                    <button onClick={() => {
-                        setArrived(false);
-                        setRoute(null);
-                        setCurrentStepIndex(0);
-                        setQrScanned(false);
-                        setCurrentLocation(null);
-                        setDestination(null);
-                    }} className="new-route-btn">
-                        🗺️ Plan New Route
-                    </button>
-                </div>
-            )}
+            </div>
         </div>
+
     );
+
 };
 
 export default NavigationPage;

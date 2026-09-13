@@ -367,21 +367,22 @@ const AdminDashboard = () => {
     <div className="admin-dashboard">
       <header className="admin-header">
         <div className="admin-header-left">
-          <h1>🏛️ Admin Dashboard</h1>
+          <h1><i class="ri-admin-fill"></i> Admin Dashboard</h1>
           <span className="admin-badge">{locations.length} Locations</span>
-          <span style={{ fontSize: '14px', color: '#666', marginLeft: '10px' }}>
-            Welcome, {profile?.username || 'Admin'}!
+          <span style={{ fontSize: '18px', color: '#666', marginLeft: '10px', fontWeight: '600' }}>
+            Welcome, <b>{profile?.username || 'Admin'}</b>!
           </span>
         </div>
         <div className="admin-header-right">
           <button onClick={openAddModal} className="btn-primary">
-            ➕ Add Location
+            <i class="ri-add-large-line"></i> Add Location
           </button>
           <button
             onClick={() => navigate('/admin/tools')}
             className="btn-tools"
           >
-            🛠️ Advanced Tools
+            <i class="ri-tools-fill"> </i>
+             Advanced Tools
           </button>
           <button onClick={handleLogout} className="btn-logout">
             Logout
@@ -444,15 +445,15 @@ const AdminDashboard = () => {
                     </span>
                   </td>
                   <td>
-                    <button onClick={() => openEditModal(loc)} className="btn-edit">✏️</button>
-                    <button onClick={() => handleDelete(loc.locId)} className="btn-delete">🗑️</button>
+                    <button onClick={() => openEditModal(loc)} className="btn-edit"><i class="ri-edit-box-line"></i></button>
+                    <button onClick={() => handleDelete(loc.locId)} className="btn-delete"><i class="ri-delete-bin-7-line"></i></button>
                     <button
                       onClick={() => generateQRCode(loc.locId, loc.name)}
                       className="btn-qr"
                       disabled={qrLoading}
                       title="Generate QR Code"
                     >
-                      {qrLoading ? '⏳' : '📱'}
+                      {qrLoading ? <i class="ri-loader-2-line"></i> : <i class="ri-qr-code-fill"></i>}
                     </button>
                   </td>
                 </tr>
@@ -467,7 +468,7 @@ const AdminDashboard = () => {
         <div className="modal-overlay" onClick={() => setShowModal(false)}>
           <div className="modal-content" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
-              <h2>{editingLocation ? '✏️ Edit Location' : '➕ Add New Location'}</h2>
+              <h2>{editingLocation ? '✏️/ Edit Location' : '➕ Add New Location'}</h2>
               <button onClick={() => setShowModal(false)} className="modal-close">✕</button>
             </div>
 

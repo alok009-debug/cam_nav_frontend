@@ -11,22 +11,21 @@ function App() {
   return (
     
     <BrowserRouter>
-      <nav className="nav-bar">
+      {/* <nav className="nav-bar">
         <Link to="/">Home</Link>
         <Link to="/navigate">Navigate</Link>
         <Link to="/admin/login">Admin</Link>
         <Link to="/tools">Admin tools</Link>
-      </nav>
+      </nav> */}
 
       <Routes>
         <Route path="/" element={<Home/>} />
         <Route path="/navigate" element={<NavigationPage />} />
-        <Route path="/tools" element={<AdminTools />} />
         <Route path="/admin/login" element={<AdminLogin />} />
         <Route path="/admin/dashboard" element={<AdminDashboard />} />
         <Route path="/admin/signup" element={<AdminSignup />} />
         <Route path="/admin/tools" element={<AdminTools />} /> 
-
+      
       </Routes>
     </BrowserRouter>
   );
