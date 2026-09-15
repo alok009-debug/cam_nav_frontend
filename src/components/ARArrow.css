@@ -119,3 +119,74 @@
 .compass-btn:hover {
     background: #e67e22;
 }
+
+/* ============================================================
+   AR ARROW — Tilted SVG with proximity pulse
+   ============================================================ */
+
+.ar-arrow-wrapper {
+  display: grid;
+  place-items: center;
+  perspective: 500px;            /* enables 3D tilt */
+  margin: 24px auto;
+  pointer-events: none;
+  user-select: none;
+}
+
+.ar-arrow-3d {
+  width: 160px;
+  height: 160px;
+  position: relative;
+  transform-origin: 50% 50%;
+  transform-style: preserve-3d;
+  transition: transform 120ms linear;   /* smooth rotation */
+  will-change: transform;
+}
+
+.arrow-svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+  filter: drop-shadow(0 8px 12px rgba(0, 0, 0, 0.35));
+}
+
+/* Glow ring — invisible until .pulse is active */
+.arrow-glow {
+  position: absolute;
+  inset: -14px;
+  border-radius: 50%;
+  background: radial-gradient(
+    circle,
+    rgba(74, 222, 128, 0.45) 0%,
+    rgba(74, 222, 128, 0.15) 45%,
+    transparent 70%
+  );
+  opacity: 0;
+  transition: opacity 200ms ease;
+  pointer-events: none;
+}
+
+/* Proximity pulse (< 30 m) */
+.ar-arrow-3d.pulse .arrow-glow {
+  opacity: 1;
+  animation: ar-pulse 1.2s ease-out infinite;
+}
+
+@keyframes ar-pulse {
+  0%   { transform: scale(0.75); opacity: 0.9; }
+  70%  { transform: scale(1.35); opacity: 0;   }
+  100% { transform: scale(1.35); opacity: 0;   }
+}
+
+/* Distance bubble below the arrow */
+.arrow-distance-bubble {
+  margin-top: 18px;
+  padding: 6px 16px;
+  background: rgba(0, 0, 0, 0.78);
+  color: #fff;
+  border-radius: 999px;
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+}

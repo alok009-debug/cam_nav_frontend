@@ -6,10 +6,7 @@ import { calculateBearing, calculateDistance } from '../utils/bearing';
 import QRScanner from '../components/QRScanner';
 import "remixicon/fonts/remixicon.css";
 import { Link } from 'react-router-dom';
-
 import './Home.css'
-
-
 import ARArrow from '../components/ARArrow';
 import { smoothAngle } from '../utils/smoothing';
 
@@ -513,7 +510,7 @@ const Home = () => {
             {/* AR ARROW VIEW */}
             {navigationMode === 'ar' && (
               <div className="ar-view">
-                {/* ✅ 3D AR Arrow */}
+                {/* 3D AR Arrow */}
                 <ARArrow
                   rotation={arrowRotation}
                   distance={distanceToFinal}
@@ -541,7 +538,7 @@ const Home = () => {
 
                 {permission === 'prompt' && (
                   <button onClick={requestPermission} className="compass-btn">
-                    🧭 Enable Compass
+                    Enable Compass
                   </button>
                 )}
               </div>
@@ -557,7 +554,7 @@ const Home = () => {
         {/* ARRIVAL VIEW */}
         {arrived && (
           <div className="arrival-card">
-            <div className="arrival-icon">🎉</div>
+            <div className="arrival-icon"></div>
             <h2>You have arrived!</h2>
             <p>You've reached <strong>{destination?.name}</strong></p>
             <button onClick={() => {
@@ -568,7 +565,7 @@ const Home = () => {
               setCurrentLocation(null);
               setDestination(null);
             }} className="new-route-btn">
-              🗺️ Plan New Route
+              Plan New Route
             </button>
           </div>
         )}

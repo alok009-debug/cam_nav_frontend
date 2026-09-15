@@ -35,7 +35,7 @@ const AdminDashboard = () => {
     if (adminDataString) {
       const adminData = JSON.parse(adminDataString);
       setProfile(adminData);
-      setAdminId(adminData.id); // ✅ Store admin ID
+      setAdminId(adminData.id); 
       fetchLocations(adminData.id);
     } else {
       navigate('/admin/login');
@@ -56,7 +56,7 @@ const AdminDashboard = () => {
       const response = await api.post('/admin/generate-graph', {}, {
         headers: { Authorization: `Bearer ${localStorage.getItem("adminToken")}` }
       });
-      setSuccess(`✅ ${response.data.message}`);
+      setSuccess(` ${response.data.message}`);
       // Refresh locations after generation
       await fetchLocations(adminId);
     } catch (err) {
@@ -114,7 +114,7 @@ const AdminDashboard = () => {
     }
   };
 
-  // ✅ Refresh function using stored adminId
+  //  Refresh function using stored adminId
   const refreshLocations = async () => {
     if (adminId) {
       await fetchLocations(adminId);
@@ -221,9 +221,6 @@ const AdminDashboard = () => {
 
       console.log(location.longitude),
       console.log(formData);
-
-
-
   };
   // Add QR generation function
   const [qrImage, setQrImage] = useState(null);
@@ -271,7 +268,7 @@ const AdminDashboard = () => {
 
     const fileName = `QR_${safeName}_${currentLocId || ''}.png`;
 
-    console.log('📥 Downloading:', fileName);
+    console.log('Downloading:', fileName);
 
     const link = document.createElement('a');
     link.href = qrImage;
@@ -387,9 +384,7 @@ const AdminDashboard = () => {
           <button onClick={handleLogout} className="btn-logout">
             Logout
           </button>
-
         </div>
-
       </header>
 
       {success && <div className="alert-success">{success}</div>}
@@ -599,7 +594,7 @@ const AdminDashboard = () => {
                     checked={formData.create_node}
                     onChange={(e) => setFormData({ ...formData, create_node: e.target.checked })}
                   />
-                  🗺️ Also create as a navigation node (intersection)
+                   Also create as a navigation node (intersection)
                 </label>
                 <small style={{ color: '#888', display: 'block', marginTop: '5px' }}>
                   Enable this if this location should be used as a waypoint or intersection for navigation
@@ -631,7 +626,7 @@ const AdminDashboard = () => {
             <img src={qrImage} alt="QR Code" />
             <div className="qr-actions">
               <button onClick={downloadQR} className="btn-download">
-                ⬇️ Download QR Code
+                ⬇ Download QR Code
               </button>
               <button onClick={closeQRModal} className="btn-close">
                 ✕ Close
